@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo Clicker Idle - Ultimate</title>
+
+<!-- CrazyGames SDK v3 -->
+<script src="https://cdn.crazygames.com/crazygames-sdk/latest/crazygames-sdk.min.js"></script>
+
+<style>
+  /* --- FULL GAME CSS --- */
+  html, body { margin:0; padding:0; overflow:hidden; font-family: 'Arial', sans-serif; background: #121212; }
+  #game-container { width:100vw; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; position:relative; background: linear-gradient(180deg, #222 0%, #111 100%); }
+
+  /* Top bar */
+  #top-bar { width:100%; height:60px; background:#1a1a1a; display:flex; justify-content:flex-end; align-items:center; padding:0 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); z-index:100; }
+  .top-button { margin-left:10px; padding:6px 12px; background:#333; border-radius:6px; cursor:pointer; color:white; font-weight:bold; box-shadow: 0 3px 5px rgba(0,0,0,0.3); transition:0.2s; }
+  .top-button:hover { background:#555; transform: translateY(-2px); }
+  #coin-counter { color: #ffd700; font-weight:bold; font-size:18px; margin-right:15px; }
+
+  /* Main UI */
+  #main-ui { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+  #click-button { width:150px; height:150px; background:#ff5722; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:white; cursor:pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition:0.1s; }
+  #click-button:active { transform: scale(0.95); }
+
+  /* Upgrades */
+  #upgrades-panel { width:320px; background:#1a1a1a; padding:15px; border-radius:12px; box-shadow: 0 5px 10px rgba(0,0,0,0.5); margin-top:20px; display:flex; flex-direction:column; gap:10px; }
+  .upgrade { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#2a2a2a; border-radius:8px; cursor:pointer; transition:0.2s; }
+  .upgrade:hover { background:#3a3a3a; }
+  .upgrade-name { font-weight:bold; color:white; }
+  .upgrade-cost { color:#ffd700; font-weight:bold; }
+
+  /* Evolution */
+  #evolution-panel { width:360px; background:#1a1a1a; border-radius:12px; padding:15px; margin-top:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.6); }
+  #evolution-title { color:#00e5ff; font-weight:bold; font-size:20px; margin-bottom:10px; text-align:center; }
+  .evolution-step { display:flex; justify-content:space-between; margin:5px 0; color:white; }
+  .evolution-ready { color:#00ff00; font-weight:bold; }
+
+  /* Particles */
+  .coin { position:absolute; width:24px; height:24px; background: radial-gradient(circle,#ffd700,#ffcc00); border-radius:50%; pointer-events:none; animation:floatCoin 1s ease-out forwards; }
+  @keyframes floatCoin { 0% { opacity:1; transform:translateY(0) scale(1);} 100% { opacity:0; transform:translateY(-100px) scale(0.5);} }
+
+  /* Popups */
+  #popup { position:absolute; top:40%; left:50%; transform:translate(-50%, -50%); background:#333; padding:20px; border-radius:12px; color:white; font-weight:bold; font-size:18px; display:none; box-shadow:0 5px 20px rgba(0,0,0,0.7); }
+
+  /* Daily rewards */
+  #daily-reward { position:absolute; bottom:20px; right:20px; background:#ff4081; color:white; font-weight:bold; padding:12px 18px; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.5); }
+  #daily-reward:hover { background:#ff79a1; }
+
+  /* Offline popup */
+  #offline-popup { position:absolute; top:30%; left:50%; transform:translate(-50%, -50%); background:#444; padding:20px; border-radius:12px; color:white; font-weight:bold; font-size:16px; display:none; box-shadow:0 5px 20px rgba(0,0,0,0.7); }
+
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div id="top-bar">
+    <div id="coin-counter">Coins: 0</div>
+    <div class="top-button" id="rebirth-button">Rebirth</div>
+    <div class="top-button" id="leaderboard-button">Leaderboard</div>
+  </div>
+
+  <div id="main-ui">
+    <div id="click-button">CLICK!</div>
+
+    <div id="upgrades-panel">
+      <div class="upgrade" data-cost="50" data-power="1">
+        <div class="upgrade-name">Auto Clicker</div>
+        <div class="upgrade-cost">50</div>
+      </div>
+      <div class="upgrade" data-cost="200" data-power="5">
+        <div class="upgrade-name">Double Coins</div>
+        <div class="upgrade-cost">200</div>
+      </div>
+      <div class="upgrade" data-cost="500" data-power="10">
+        <div class="upgrade-name">Mega Click</div>
+        <div class="upgrade-cost">500</div>
+      </div>
+    </div>
+
+    <div id="evolution-panel">
+      <div id="evolution-title">Evolution</div>
+      <div class="evolution-step" data-required="100">Robot Level 2: <span class="evolution-count">0/100</span></div>
+      <div class="evolution-step" data-required="300">Robot Level 3: <span class="evolution-count">0/300</span></div>
+      <div class="evolution-step" data-required="600">Robot Level 4: <span class="evolution-count">0/600</span></div>
+    </div>
+
+    <div id="popup">Something!</div>
+    <div id="offline-popup">You earned 0 coins while away!</div>
+    <div id="daily-reward">Claim Daily Reward</div>
+  </div>
+</div>
+
+<script>
+/* --- FULL GAME LOGIC --- */
+let coins = 0;
+let clickPower = 1;
+let upgrades = [];
+let evolutionProgress = [0,0,0];
+let evolutionRequirements = [100,300,600];
+let lastOffline = Date.now() - 3600*1000; // 1h ago
+let dailyClaimed = false;
+
+const coinCounter = document.getElementById("coin-counter");
+const clickButton = document.getElementById("click-button");
+const upgradesPanel = document.getElementById("upgrades-panel");
+const evolutionPanel = document.getElementById("evolution-panel");
+const popup = document.getElementById("popup");
+const offlinePopup = document.getElementById("offline-popup");
+const dailyRewardBtn = document.getElementById("daily-reward");
+
+// Coins
+clickButton.addEventListener("click", ()=>{
+  addCoins(clickPower);
+  spawnCoin(clickButton);
+});
+
+function addCoins(amount){
+  coins += amount;
+  coinCounter.innerText = "Coins: " + coins;
+  updateEvolution(amount);
+}
+
+// Flying coin particles
+function spawnCoin(el){
+  const coin = document.createElement("div");
+  coin.className = "coin";
+  document.body.appendChild(coin);
+  const rect = el.getBoundingClientRect();
+  coin.style.left = rect.left + rect.width/2 - 12 + "px";
+  coin.style.top = rect.top + rect.height/2 - 12 + "px";
+  setTimeout(()=>{ coin.remove(); },1000);
+}
+
+// Upgrades
+upgradesPanel.querySelectorAll(".upgrade").forEach(u=>{
+  u.addEventListener("click", ()=>{
+    const cost = parseInt(u.dataset.cost);
+    if(coins >= cost){
+      coins -= cost;
+      clickPower += parseInt(u.dataset.power);
+      coinCounter.innerText = "Coins: " + coins;
+      u.dataset.cost = Math.floor(cost*2);
+      u.querySelector(".upgrade-cost").innerText = u.dataset.cost;
+      showPopup("Upgrade Purchased!");
+    }
+  });
+});
+
+// Evolution
+function updateEvolution(amount){
+  evolutionPanel.querySelectorAll(".evolution-step").forEach((step,i)=>{
+    evolutionProgress[i] += amount;
+    let countEl = step.querySelector(".evolution-count");
+    countEl.innerText = evolutionProgress[i]+"/"+evolutionRequirements[i];
+    if(evolutionProgress[i]>=evolutionRequirements[i]){
+      countEl.classList.add("evolution-ready");
+      showPopup("Evolution Ready!");
+    }
+  });
+}
+
+// Popups
+function showPopup(text){
+  popup.innerText = text;
+  popup.style.display = "block";
+  setTimeout(()=>{ popup.style.display = "none"; },1200);
+}
+
+// Rebirth
+document.getElementById("rebirth-button").addEventListener("click", ()=>{
+  if(confirm("Rebirth? Coins and upgrades reset but evolution boosts remain!")){
+    coins = 0;
+    clickPower = 1;
+    coinCounter.innerText = "Coins: " + coins;
+    upgradesPanel.querySelectorAll(".upgrade").forEach(u=>{
+      u.dataset.cost = Math.floor(parseInt(u.dataset.cost)/2);
+      u.querySelector(".upgrade-cost").innerText = u.dataset.cost;
+    });
+    showPopup("Rebirth Complete!");
+  }
+});
+
+// Daily reward
+dailyRewardBtn.addEventListener("click", ()=>{
+  if(dailyClaimed){
+    showPopup("Daily already claimed!");
+  } else {
+    const reward = Math.floor(Math.random()*500)+100;
+    addCoins(reward);
+    dailyClaimed = true;
+    showPopup("Daily Reward: "+reward+" coins!");
+  }
+});
+
+// Offline earnings
+window.addEventListener("load", ()=>{
+  const now = Date.now();
+  const diff = Math.floor((now-lastOffline)/1000);
+  if(diff>60){
+    const offlineCoins = Math.floor(diff/5);
+    coins += offlineCoins;
+    coinCounter.innerText = "Coins: " + coins;
+    offlinePopup.innerText = "You earned "+offlineCoins+" coins while away!";
+    offlinePopup.style.display = "block";
+    setTimeout(()=>{ offlinePopup.style.display = "none"; },2000);
+  }
+  lastOffline = now;
+});
+
+// Auto Clicker every second
+setInterval(()=>{
+  if(clickPower>1) addCoins(Math.floor(clickPower/2));
+},1000);
+
+// CrazyGames SDK
+crazygames.init({environment:"production",gameId:"your-game-id-here"});
+document.getElementById("leaderboard-button").addEventListener("click", ()=>{
+  crazygames.showLeaderboard();
+});
+
+</script>
+</body>
+</html>
