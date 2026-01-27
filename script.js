@@ -54,11 +54,20 @@ class RoboClicker {
 
             // Upgrades with descriptions - EXCLUSIVE & FUN
             upgrades: {
-                'cursor': { level: 0, baseCost: 10, basePower: 1, name: "Stronger Clicks", desc: "+1 Click Value", type: "click" },
-                'auto_clicker': { level: 0, baseCost: 100, basePower: 1, name: "Auto Clicker", desc: "Clicks once every second", type: "effect_autoclick" },
-                'crit_chance': { level: 0, baseCost: 1000, basePower: 1, name: "Crit Chance", desc: "+1% Chance for Double Damage", type: "effect_crit" },
-                'passive_mult': { level: 0, baseCost: 10000, basePower: 0.05, name: "Income Multiplier", desc: "+5% to ALL earnings", type: "effect_mult" },
-                'discount': { level: 0, baseCost: 50000, basePower: 0.02, name: "Cheaper Upgrades", desc: "-2% Upgrade Costs", type: "effect_discount" }
+                'cursor': { level: 0, baseCost: 10, basePower: 1, name: "Cursor", desc: "+1 Per Click", type: "click" },
+                'auto_clicker': { level: 0, baseCost: 100, basePower: 1, name: "Auto Bot", desc: "Auto Clicks", type: "effect_autoclick" },
+                'crit_chance': { level: 0, baseCost: 1000, basePower: 1, name: "Critical", desc: "Double Damage Chance", type: "effect_crit" },
+                'golden_mouse': { level: 0, baseCost: 2500, basePower: 1, name: "Lucky Drop", desc: "50x Cash Chance", type: "effect_gold" },
+                'click_storm': { level: 0, baseCost: 7500, basePower: 1, name: "Click Storm", desc: "Auto Burst Chance", type: "effect_storm" },
+                'passive_mult': { level: 0, baseCost: 10000, basePower: 0.05, name: "Multiplier", desc: "+5% All Income", type: "effect_mult" },
+                'discount': { level: 0, baseCost: 50000, basePower: 0.02, name: "Discount", desc: "Cheaper Upgrades", type: "effect_discount" }
+            },
+            
+            // Combo System State
+            combo: {
+                count: 0,
+                timer: null,
+                multiplier: 1
             },
             
             lastSave: Date.now(),
@@ -88,9 +97,38 @@ class RoboClicker {
 
     async init() {
         console.log("Initializing Robo Clicker Elite...");
+
+        // --- CrazyGames SDK Initialization ---
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            try {
+                await window.CrazyGames.SDK.init();
+                console.log("CrazyGames SDK Initialized");
+
+                // --- Ad Block Detection ---
+                const hasAdblock = await window.CrazyGames.SDK.ad.hasAdblock();
+                if (hasAdblock) {
+                    console.warn("Adblock detected!");
+                    // Optional: You can handle this (e.g., disable ad buttons)
+                }
+            } catch (e) {
+                console.error("SDK Init Error:", e);
+            }
+        }
         
         this.cacheDOM();
         this.initAudio();
+        
+        // Ensure Audio Resumes on Interaction
+        const resumeAudio = () => {
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
+            window.removeEventListener('click', resumeAudio);
+            window.removeEventListener('touchstart', resumeAudio);
+        };
+        window.addEventListener('click', resumeAudio);
+        window.addEventListener('touchstart', resumeAudio);
+
         this.loadGame();
         
         this.setupEventListeners();
@@ -111,6 +149,17 @@ class RoboClicker {
         if (this.gameState.totalBotsDeployed === 0) {
             this.initTutorial();
         }
+
+        // --- Remove Loading Screen ---
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.remove();
+                }, 1000); // Wait for fade out
+            }
+        }, 2000); // Show for at least 2 seconds
     }
 
     // --- TUTORIAL ---
@@ -177,20 +226,33 @@ class RoboClicker {
             
             hero: document.getElementById('hero-robot'),
             fusionFill: document.getElementById('fusion-fill'), // Now Evolution Fill
-            fusionLabel: document.querySelector('.fusion-label'),
+            evoPercent: document.getElementById('evo-percent'),
             
+            sentinelBot: document.getElementById('sentinel-bot'),
+
+            // Heat System
+            heatSystem: document.querySelector('.heat-system'), // New
+            heatFill: document.getElementById('heat-fill'),
+            heatFire: document.getElementById('heat-fire'),
+            heatText: document.getElementById('heat-text'),
+            heatBulb: document.getElementById('heat-bulb'),
+            idlePrompt: document.getElementById('idle-prompt'),
+
             upgradesContainer: document.getElementById('upgrades-container'),
             
             modalOverlay: document.getElementById('modal-overlay'),
             rebirthModal: document.getElementById('rebirth-modal'),
             dailyModal: document.getElementById('daily-rewards-modal'),
             settingsModal: document.getElementById('settings-modal'),
+            offlineModal: document.getElementById('offline-modal'), // New
             indexModal: document.getElementById('index-modal'),
             confirmModal: document.getElementById('confirm-modal'), // New
             leaderboardOverlay: document.getElementById('leaderboard-overlay'),
             
             rebirthBtn: document.getElementById('open-rebirth-btn'),
             leaderboardScores: document.getElementById('leaderboard-scores'),
+            
+            claimOfflineBtn: document.getElementById('claim-offline-btn'), // New
             
             bonusDrawer: document.getElementById('bonus-drawer'),
             drawerToggle: document.getElementById('drawer-toggle'),
@@ -233,7 +295,7 @@ class RoboClicker {
         osc.frequency.setValueAtTime(baseFreq, now);
         osc.frequency.linearRampToValueAtTime(baseFreq + 100, now + 0.1); // Pitch up slightly
         
-        const vol = (this.gameState.settings.sfxVolume / 100) * 0.1; // Much lower volume (10%)
+        const vol = (this.gameState.settings.sfxVolume / 100) * 0.05; // Much lower volume (5%) - Permanent Fix
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(vol, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
@@ -267,72 +329,94 @@ class RoboClicker {
     }
 
     playBackgroundMusic() {
-        if (!this.audioCtx) return;
-        if (this.musicInterval) clearInterval(this.musicInterval);
+        if (this.bgMusic) return; // Already setup
 
-        // Master Gain for Music
-        this.musicGain = this.audioCtx.createGain();
-        this.musicGain.connect(this.audioCtx.destination);
+        // Upbeat Mobile Casual Video Game Music (Pixabay ID 158301)
+        // Direct CDN link (Cleaner)
+        const musicUrl = "https://cdn.pixabay.com/audio/2023/07/16/audio_1063675276.mp3"; 
+        
+        this.bgMusic = new Audio(musicUrl); 
+        this.bgMusic.loop = true;
         this.updateMusicVolume();
-
-        // Simulator Vibe: Upbeat, Marimba/Pluck, C Major
-        // Pattern: Arpeggio
-        const scale = [261.63, 329.63, 392.00, 523.25]; // C E G C
-        const pattern = [0, 1, 2, 1, 0, 2, 3, 2];
-        let noteIdx = 0;
-
-        const playNote = () => {
-            if (this.audioCtx.state === 'suspended') return;
-            
-            const osc = this.audioCtx.createOscillator();
-            const gain = this.audioCtx.createGain();
-            
-            osc.type = 'triangle'; // Pluckier than sine
-            // Filter to make it softer/marimba-like
-            // (Simulated by using triangle + low volume)
-            
-            const freq = scale[pattern[noteIdx]];
-            osc.frequency.value = freq;
-            
-            const now = this.audioCtx.currentTime;
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.05, now + 0.02); // Quick attack
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); // Short decay
-            
-            osc.connect(gain);
-            gain.connect(this.musicGain);
-            
-            osc.start(now);
-            osc.stop(now + 0.5);
-            
-            noteIdx = (noteIdx + 1) % pattern.length;
+        
+        // Interaction requirement handling
+        const startMusic = () => {
+            if (this.bgMusic && this.bgMusic.paused) {
+                this.bgMusic.play().catch(e => console.log("Waiting for interaction to play music"));
+            }
         };
-
-        // Faster tempo: 300ms
-        this.musicInterval = setInterval(playNote, 300);
+        
+        document.addEventListener('click', startMusic);
+        document.addEventListener('touchstart', startMusic);
+        document.addEventListener('keydown', startMusic);
+        
+        // Try playing immediately
+        startMusic();
     }
 
     updateMusicVolume() {
-        if (this.musicGain) {
-            // Volume range 0.0 to 0.3 (max) to keep it background
+        if (this.bgMusic) {
+            // Volume range 0.0 to 0.3 (max) for "softer" feel
             const vol = (this.gameState.settings.musicVolume / 100) * 0.3;
-            this.musicGain.gain.setTargetAtTime(vol, this.audioCtx.currentTime, 0.1);
+            this.bgMusic.volume = vol;
         }
     }
 
     // --- GAMEPLAY LOGIC ---
 
-    clickHero(event) {
+    clickHero(event, isAuto = false) {
+        // --- HEAT SYSTEM ---
+        if (!isAuto) {
+            this.lastClickTime = Date.now();
+            this.isIdle = false;
+            if (this.els.idlePrompt) this.els.idlePrompt.classList.add('hidden');
+            
+            // Increase Heat - EASIER TO FILL
+            this.heat = Math.min(100, (this.heat || 0) + 10);
+        }
+
+        // Heat Multiplier Logic
+        let heatMult = 1;
+        if (this.heat >= 98) {
+            heatMult = 5;
+        } else if (this.heat >= 50) {
+            heatMult = 2;
+        }
+
         // Critical Chance Logic
         const critChance = (this.gameState.upgrades['crit_chance'].level * this.gameState.upgrades['crit_chance'].basePower) / 100;
         let isCrit = Math.random() < critChance;
         
         let amount = this.getClickPower();
+        
+        // Apply Multipliers
+        amount *= heatMult; // Heat Multiplier
+
         if (isCrit) {
             amount *= 2; // Double Damage
         }
 
-        // Midas Chip Logic
+        // Golden Mouse (Touch) Logic
+        const goldenLevel = this.gameState.upgrades['golden_mouse'].level;
+        let isGolden = false;
+        if (goldenLevel > 0 && !isAuto) { // Only manual
+            const chance = goldenLevel * 0.01; // 1% per level
+            if (Math.random() < chance) {
+                amount *= 50;
+                isGolden = true;
+            }
+        }
+
+        // Click Storm Logic
+        const stormLevel = this.gameState.upgrades['click_storm'].level;
+        if (stormLevel > 0 && !isAuto && event) { // Only on manual clicks
+            const chance = stormLevel * 0.01;
+            if (Math.random() < chance) {
+                this.triggerClickStorm();
+            }
+        }
+
+        // Midas Chip Logic (Legacy check, kept safe)
         const midasLevel = this.gameState.upgrades['midas_chip'] ? this.gameState.upgrades['midas_chip'].level : 0;
         let isMidas = false;
         if (midasLevel > 0 && Math.random() < 0.005) { // 0.5% fixed chance
@@ -342,26 +426,36 @@ class RoboClicker {
 
         this.addMoney(amount);
         
-        this.gameState.totalBotsDeployed++;
-        
         // EVOLUTION MECHANIC
-        // Add XP per click
-        this.gameState.evolution.xp += 0.5;
-        if (this.gameState.evolution.xp >= this.gameState.evolution.maxXp) {
-            this.evolveRobot();
+        // Only Manual Clicks give XP
+        if (!isAuto) {
+            this.gameState.totalBotsDeployed++;
+            // Add XP per click
+            this.gameState.evolution.xp += 0.5;
+            if (this.gameState.evolution.xp >= this.gameState.evolution.maxXp) {
+                this.evolveRobot();
+            }
         }
 
         // Visuals & Audio
-        if (event) { // Check if triggered by user input for visuals
+        if (!isAuto && event) { // Check if triggered by user input for visuals
             this.spawnMoneyParticle(amount, event.clientX, event.clientY);
             this.spawnClickRipple(event.clientX, event.clientY); // New Ripple
             this.animateHero();
             
-            if (isMidas) {
+            if (isGolden) {
+                 this.spawnDamageNumber("GOLDEN!", event.clientX, event.clientY - 80, '#FFD700');
+                 this.playNotificationSound();
+            } else if (isMidas) {
                  this.spawnDamageNumber("MIDAS!", event.clientX, event.clientY - 80, '#FFD700');
                  this.playNotificationSound();
             } else if (isCrit) {
                  this.spawnDamageNumber("CRIT!", event.clientX, event.clientY - 50, 'red');
+            } else if (this.gameState.combo.multiplier > 1.2) {
+                 // Show combo text occasionally
+                 if (Math.random() < 0.2) {
+                     this.spawnDamageNumber(`${this.gameState.combo.multiplier.toFixed(1)}x COMBO`, event.clientX, event.clientY - 100, '#e67e22');
+                 }
             }
             
             // Tutorial End trigger
@@ -371,10 +465,32 @@ class RoboClicker {
             
             // Only play sound on manual click
             this.playClickSound();
+        } else if (isAuto) {
+             // Auto Click Visual (Sentinel)
+             this.animateSentinel();
         }
         
         this.updateHUD(); 
         this.updateFusionUI();
+    }
+
+    triggerClickStorm() {
+        let clicks = 0;
+        const interval = setInterval(() => {
+            this.clickHero(null); // Auto click
+            // Create visual effect at random position around center
+            const rect = this.els.hero.getBoundingClientRect();
+            const x = rect.left + Math.random() * rect.width;
+            const y = rect.top + Math.random() * rect.height;
+            this.spawnMoneyParticle(this.getClickPower(), x, y);
+            
+            clicks++;
+            if (clicks >= 10) clearInterval(interval);
+        }, 100); // Fast burst
+        
+        // Announce it
+        const rect = this.els.hero.getBoundingClientRect();
+        this.spawnDamageNumber("CLICK STORM!", rect.left + rect.width/2, rect.top, '#3498db');
     }
 
     evolveRobot() {
@@ -458,8 +574,8 @@ class RoboClicker {
         this.els.hero.classList.add(currentTier.class);
         
         // Update Label
-        if (this.els.fusionLabel) {
-            this.els.fusionLabel.textContent = `EVOLUTION: ${Math.floor((this.gameState.evolution.xp / this.gameState.evolution.maxXp) * 100)}%`;
+        if (this.els.evoPercent) {
+            this.els.evoPercent.textContent = `${Math.floor((this.gameState.evolution.xp / this.gameState.evolution.maxXp) * 100)}%`;
         }
     }
 
@@ -505,10 +621,63 @@ class RoboClicker {
         if (this.gameState.money >= cost) {
             this.gameState.money -= cost;
             upgrade.level++;
+            
+            // Special Logic for Auto Clicker
+            if (key === 'auto_clicker') {
+                this.spawnUpgradeFlash(); // Flash Effect
+                this.animateSentinel(); // Ensure visible
+            }
+            
             this.updateDisplay();
             this.renderUpgrades(); 
             this.saveGame();
             this.playClickSound(); // UI Click
+        }
+    }
+
+    spawnUpgradeFlash() {
+        const flash = document.createElement('div');
+        flash.className = 'upgrade-flash';
+        
+        // Position on Sentinel or Center
+        const sentinel = this.els.sentinelBot;
+        if (sentinel && !sentinel.classList.contains('hidden')) {
+            const rect = sentinel.getBoundingClientRect();
+            flash.style.left = (rect.left + rect.width/2) + 'px';
+            flash.style.top = (rect.top + rect.height/2) + 'px';
+        } else {
+            // Default center if not visible
+            flash.style.left = '50%';
+            flash.style.top = '30%';
+        }
+        
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 600);
+    }
+
+    animateSentinel() {
+        const sentinel = this.els.sentinelBot;
+        if (sentinel) {
+            sentinel.classList.remove('hidden');
+            sentinel.classList.add('idle'); 
+            
+            // Trigger Laser Fire
+            sentinel.classList.remove('firing-laser');
+            void sentinel.offsetWidth; // Force reflow
+            sentinel.classList.add('firing-laser');
+            
+            // TRIGGER ROBOT REACTION
+            this.animateHero();
+            
+            // Spawn ripple at hero center (approx where laser hits)
+            const heroRect = this.els.hero.getBoundingClientRect();
+            this.spawnClickRipple(
+                heroRect.left + heroRect.width / 2, 
+                heroRect.top + heroRect.height / 2
+            );
+
+            // Optional: Add laser sound if available
+            // this.playLaserSound(); 
         }
     }
 
@@ -518,31 +687,32 @@ class RoboClicker {
         const discountLevel = this.gameState.upgrades['discount'].level;
         const discountPct = Math.min(0.50, discountLevel * 0.02); // Max 50% discount
         
-        let cost = Math.floor(upgrade.baseCost * Math.pow(1.4, upgrade.level));
+        // Balanced Economy: 1.5x scaling (was 1.4x) to prevent runaway growth
+        let cost = Math.floor(upgrade.baseCost * Math.pow(1.5, upgrade.level));
         cost = Math.floor(cost * (1 - discountPct));
         
         return Math.max(1, cost);
     }
 
+    getRebirthCost() {
+        return 1000000 * Math.pow(4, this.gameState.rebirthCount);
+    }
+
     rebirth() {
-        if (this.gameState.money < 1000000) return;
+        const cost = this.getRebirthCost();
+        if (this.gameState.money < cost) return;
 
         this.gameState.money = 0;
         for (const key in this.gameState.upgrades) {
             this.gameState.upgrades[key].level = 0;
         }
 
-        this.gameState.rebirthMultiplier *= 2;
+        this.gameState.rebirthMultiplier += 0.5; // Balanced: +50% each time
         this.gameState.rebirthCount++;
         
-        // Reset Evolution? No, keep it as permanent progression or maybe partial reset?
-        // User said "rewarding...progressively harder". Rebirth usually resets everything but keeps multiplier.
-        // Let's reset Stage to 0 but keep unlocked index.
-        this.gameState.evolution.stage = 0;
-        this.gameState.evolution.xp = 0;
-        this.gameState.evolution.maxXp = 100;
-        this.applyRobotVisuals();
-
+        // Evolution persists (User Request)
+        // We do NOT reset evolution.stage
+        
         this.saveGame();
         this.updateDisplay();
         this.renderUpgrades();
@@ -601,14 +771,17 @@ class RoboClicker {
         this.checkNotifications();
         this.updateUpgradeAffordability();
         
-        const rebirthCost = 1000000;
+        const rebirthCost = this.getRebirthCost();
         const canRebirth = this.gameState.money >= rebirthCost;
-        this.els.rebirthBtn.style.opacity = canRebirth ? '1' : '0.5';
         
-        if (canRebirth) {
-            this.els.rebirthBtn.classList.add('rebirth-glow');
-        } else {
-            this.els.rebirthBtn.classList.remove('rebirth-glow');
+        // Update Rebirth Button Text/State if it exists
+        if (this.els.rebirthBtn) {
+             this.els.rebirthBtn.style.opacity = canRebirth ? '1' : '0.5';
+             if (canRebirth) {
+                 this.els.rebirthBtn.classList.add('rebirth-glow');
+             } else {
+                 this.els.rebirthBtn.classList.remove('rebirth-glow');
+             }
         }
     }
 
@@ -648,9 +821,17 @@ class RoboClicker {
     updateHUD() {
         this.els.money.textContent = this.formatNumber(Math.floor(this.gameState.money));
         
+        // Heat Multiplier
+        let heatMult = 1;
+        if (this.heat >= 98) {
+            heatMult = 5;
+        } else if (this.heat >= 50) {
+            heatMult = 2;
+        }
+
         // "Bot Value" is click power * all multipliers
         const currentTierMult = ROBOT_TIERS[this.gameState.evolution.stage].multiplier;
-        const totalMult = this.gameState.rebirthMultiplier * currentTierMult;
+        const totalMult = this.gameState.rebirthMultiplier * currentTierMult * heatMult;
         
         this.els.botValue.textContent = this.formatNumber(Math.floor(this.getClickPower() * totalMult));
         this.els.totalBots.textContent = this.formatNumber(this.gameState.totalBotsDeployed);
@@ -661,18 +842,22 @@ class RoboClicker {
         let pct = (this.gameState.evolution.xp / this.gameState.evolution.maxXp) * 100;
         if (pct > 100) pct = 100;
         this.els.fusionFill.style.width = `${pct}%`;
-        if (this.els.fusionLabel) {
-            this.els.fusionLabel.textContent = `EVOLUTION PROGRESS: ${Math.floor(pct)}%`;
+        if (this.els.evoPercent) {
+            this.els.evoPercent.textContent = `${Math.floor(pct)}%`;
         }
 
         // Update Next Bot Preview
-        const nextPreview = document.getElementById('next-evo-preview');
-        if (nextPreview) {
+        const nextPreviewName = document.querySelector('.evo-target-name');
+        if (nextPreviewName) {
             const nextStage = this.gameState.evolution.stage + 1;
             if (nextStage < ROBOT_TIERS.length) {
-                nextPreview.textContent = `NEXT: ${ROBOT_TIERS[nextStage].name}`;
+                nextPreviewName.textContent = ROBOT_TIERS[nextStage].name;
+                document.querySelector('.evo-target-label').textContent = "NEXT GOAL";
+                document.querySelector('.evo-target-icon').textContent = "🔒";
             } else {
-                nextPreview.textContent = "MAX EVOLUTION";
+                nextPreviewName.textContent = "MAXED OUT";
+                document.querySelector('.evo-target-label').textContent = "COMPLETED";
+                document.querySelector('.evo-target-icon').textContent = "👑";
             }
         }
     }
@@ -692,9 +877,10 @@ class RoboClicker {
         const icons = {
             'cursor': '🖱️',
             'auto_clicker': '🤖',
-            // 'xp_boost': '🧠', // Removed
+            'combo_chip': '🔥',
             'crit_chance': '🎯',
-            'auto_cash_1': '⚙️',
+            'golden_mouse': '💰',
+            'click_storm': '⛈️',
             'passive_mult': '⚡',
             'discount': '🏷️',
             'midas_chip': '🏺',
@@ -928,21 +1114,7 @@ class RoboClicker {
         }
     }
 
-    // --- ADS & BONUSES ---
 
-    stopGameplay() {
-        // Mute Audio
-        if (this.audioCtx && this.audioCtx.state === 'running') {
-            this.audioCtx.suspend();
-        }
-    }
-
-    resumeGameplay() {
-        // Unmute Audio
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-    }
 
     watchRewardedAd(type, callbacks = {}) {
         // Cooldown Check
@@ -956,97 +1128,39 @@ class RoboClicker {
 
         this.adManager.requestedType = type;
         
-        console.log("Dev Mode: Ad Watched");
-        this.grantReward(type);
-        if (callbacks.onFinish) callbacks.onFinish();
-    }
-
-    startAdCooldown(type) {
-        if (!this.adManager.cooldowns) this.adManager.cooldowns = {};
-        const duration = 180000; // 3 minutes
-        this.adManager.cooldowns[type] = Date.now() + duration;
-        
-        // Find button and start timer UI
-        const btn = document.querySelector(`.bonus-btn[onclick="game.watchAd('${type}')"]`);
-        if (btn) {
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.classList.add('cooldown-active');
-            
-            const interval = setInterval(() => {
-                const remaining = this.adManager.cooldowns[type] - Date.now();
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('cooldown-active');
-                } else {
-                    const m = Math.floor(remaining / 60000);
-                    const s = Math.floor((remaining % 60000) / 1000);
-                    btn.textContent = `WAIT ${m}:${s.toString().padStart(2, '0')}`;
+        // CrazyGames SDK Ad Request
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            window.CrazyGames.SDK.ad.requestAd('rewarded', {
+                adStarted: () => {
+                    console.log("Ad started");
+                    this.stopGameplay();
+                },
+                adFinished: () => {
+                    console.log("Ad finished");
+                    this.resumeGameplay();
+                    this.grantReward(type);
+                    if (callbacks.onFinish) callbacks.onFinish();
+                },
+                adError: (error) => {
+                    console.warn("Ad error:", error);
+                    this.resumeGameplay();
+                    alert("Ad failed to load. Please try again later.");
+                    if (callbacks.onError) callbacks.onError(error);
                 }
-            }, 1000);
+            });
+        } else {
+            // Dev Fallback
+            console.log("Dev Mode: Ad Watched (No SDK)");
+            this.grantReward(type);
+            if (callbacks.onFinish) callbacks.onFinish();
         }
     }
 
-    grantReward(type) {
-        let msg = "";
-        const now = Date.now();
-        
-        // Start Cooldown for button-based ads
-        if (type === 'turbo' || type === 'auto' || type === 'lucky') {
-            this.startAdCooldown(type);
-        }
 
-        if (type === 'turbo') {
-            // 1 Minute Boost
-            this.adManager.boosts['turbo'] = now + 60000;
-            msg = "TURBO SURGE: 3x Income for 1 Minute!";
-            this.toggleDrawer();
-        } else if (type === 'auto') {
-            // 30 Seconds Boost
-            this.adManager.boosts['auto'] = now + 30000;
-            msg = "OVERCLOCK: 10x Speed for 30 Seconds!";
-             this.toggleDrawer();
-        } else if (type === 'lucky') {
-            // New Logic: 30% of CURRENT CASH
-            const reward = Math.floor(this.gameState.money * 0.30); 
-            this.addMoney(reward);
-            
-            // Custom UI for Lucky Strike
-            this.showCustomRewardModal(reward);
-            this.toggleDrawer();
-            return; // Skip default alert
-        } else if (type === 'offline_2x') {
-             if (this.adManager.pendingOfflineAmount) {
-                 this.addMoney(this.adManager.pendingOfflineAmount * 2);
-                 this.adManager.pendingOfflineAmount = 0;
-                 this.toggleModal('offline-modal', false);
-                 msg = "Offline Earnings Doubled!";
-             }
-        }
-        
-        // Removed standard alert for better flow, using UI instead
-        if (msg) console.log(msg); // Log instead of blocking alert
-    }
 
-    showCustomRewardModal(amount) {
-        // Reuse reward modal structure or create dynamic one
-        // We can use the existing reward-modal logic if we inject content
-        const overlay = document.createElement('div');
-        overlay.className = 'reward-modal-overlay';
-        overlay.innerHTML = `
-            <div class="reward-modal-content">
-                <h2>LUCKY STRIKE!</h2>
-                <div style="font-size: 1.2rem; color: #555;">YOU HAVE BEEN REWARDED WITH</div>
-                <div class="reward-value">$${this.formatNumber(amount)}</div>
-                <div style="font-size: 1.2rem; color: #555;">CASH!</div>
-                <button class="reward-claim-btn" onclick="this.closest('.reward-modal-overlay').remove()">AWESOME!</button>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-        this.playNotificationSound();
-    }
+
+
+
     
     // Alias for HTML onclicks
     watchAd(type) {
@@ -1069,22 +1183,7 @@ class RoboClicker {
         }
     }
 
-    watchRewardedAd(type, callbacks = {}) {
-        // Cooldown Check
-        const now = Date.now();
-        if (this.adManager.cooldowns && this.adManager.cooldowns[type]) {
-            if (now < this.adManager.cooldowns[type]) {
-                alert("Ad is on cooldown!");
-                return;
-            }
-        }
 
-        this.adManager.requestedType = type;
-        
-        console.log("Dev Mode: Ad Watched");
-        this.grantReward(type);
-        if (callbacks.onFinish) callbacks.onFinish();
-    }
 
     startAdCooldown(type) {
         if (!this.adManager.cooldowns) this.adManager.cooldowns = {};
@@ -1179,23 +1278,21 @@ class RoboClicker {
         const lastSave = this.gameState.lastSave;
         const diff = now - lastSave;
         
-        // Minimum 5 minutes (300000ms) to trigger
-        if (diff > 300000) {
+        // Minimum 1 minute (60000ms) to trigger - User Friendly
+        if (diff > 60000) {
             const seconds = Math.floor(diff / 1000);
             
             // Calculate earnings
-            // Auto Income per second * seconds
-            // Apply Tier Mult and Passive Mult
             const autoIncome = this.getAutoPower();
             const tierMult = ROBOT_TIERS[this.gameState.evolution.stage].multiplier;
             const passiveMult = 1 + (this.gameState.upgrades['passive_mult'].level * this.gameState.upgrades['passive_mult'].basePower);
+            const rebirthMult = this.gameState.rebirthMultiplier;
             
-            // Note: Auto loop divides by 10 every 100ms, so raw is per second.
-            // Wait, in loop: `(autoIncome * mult * tierMult * passiveMult) / 10` every 100ms.
-            // So per second = `autoIncome * mult * tierMult * passiveMult`.
-            // Base `mult` is 1 (no ad boost offline).
+            // Base earnings per second = (autoIncome * tierMult * passiveMult * rebirthMult)
+            // Note: In game loop we divide by 10 per 100ms, so total is 1x per second.
             
-            const totalOffline = Math.floor(autoIncome * tierMult * passiveMult * seconds * 0.5); // 50% efficiency offline
+            const rawPerSec = autoIncome * tierMult * passiveMult * rebirthMult;
+            const totalOffline = Math.floor(rawPerSec * seconds * 0.8); // 80% efficiency
             
             if (totalOffline > 0) {
                 this.adManager.pendingOfflineAmount = totalOffline;
@@ -1368,8 +1465,15 @@ class RoboClicker {
         this.els.drawerToggle.addEventListener('click', this.toggleDrawer);
 
         document.getElementById('open-rebirth-btn').addEventListener('click', () => {
-             document.querySelector('.current-mult').textContent = `${this.gameState.rebirthMultiplier}x`;
-             document.querySelector('.new-mult').textContent = `${this.gameState.rebirthMultiplier * 2}x`;
+             const cost = this.getRebirthCost();
+             const currentMult = this.gameState.rebirthMultiplier;
+             const newMult = currentMult + 0.5;
+             
+             document.querySelector('.current-mult').textContent = `${currentMult}x`;
+             document.querySelector('.new-mult').textContent = `${newMult}x`;
+             
+             const costDisplay = document.querySelector('.rebirth-cost-display');
+             if (costDisplay) costDisplay.textContent = `$${this.formatNumber(cost)}`;
              
              this.toggleModal('rebirth-modal', true);
         });
@@ -1378,12 +1482,13 @@ class RoboClicker {
         document.querySelectorAll('.close-modal-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-target');
-                if (targetId) {
-                    // Special handling for specific overlays like leaderboard
-                    const el = document.getElementById(targetId);
-                    if (el) el.classList.remove('active');
-                } else {
-                    // Default close all game modals
+                
+                // If it's the leaderboard overlay (custom dropdown)
+                if (targetId === 'leaderboard-overlay') {
+                    document.getElementById(targetId).classList.remove('active');
+                } 
+                // Standard Modals
+                else {
                     this.toggleModal(null, false);
                 }
             });
@@ -1396,6 +1501,23 @@ class RoboClicker {
             this.toggleModal('daily-rewards-modal', true);
         });
         this.els.claimDailyBtn.addEventListener('click', () => this.claimDaily());
+        
+        // Offline Claim
+        if (this.els.claimOfflineBtn) {
+            this.els.claimOfflineBtn.addEventListener('click', () => {
+                if (this.adManager.pendingOfflineAmount > 0) {
+                    // Direct add without multipliers (already calculated)
+                    this.gameState.money += this.adManager.pendingOfflineAmount;
+                    this.gameState.totalMoney += this.adManager.pendingOfflineAmount;
+                    
+                    this.adManager.pendingOfflineAmount = 0;
+                    this.saveGame();
+                    this.playNotificationSound();
+                    this.updateDisplay();
+                }
+                this.toggleModal('offline-modal', false);
+            });
+        }
 
         document.getElementById('settings-btn').addEventListener('click', () => this.toggleModal('settings-modal', true));
         this.els.sfxSlider.addEventListener('input', (e) => {
@@ -1406,6 +1528,18 @@ class RoboClicker {
             this.gameState.settings.musicVolume = parseInt(e.target.value);
             this.updateMusicVolume(); // Real-time update
             this.saveGame();
+        });
+        
+        // Auto-Save on Exit (Crucial for Offline System)
+        window.addEventListener('beforeunload', () => {
+            this.saveGame();
+        });
+        
+        // Visibility Change (Pause/Resume music or save)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.saveGame();
+            }
         });
 
         // Custom Reset Logic
@@ -1457,27 +1591,59 @@ class RoboClicker {
 
     async fetchLeaderboard() {
          const container = this.els.leaderboardScores;
-         container.innerHTML = '<div style="padding:20px; text-align:center;">Loading...</div>';
+         container.innerHTML = '<div style="padding:20px; text-align:center;">Connecting to Global Network...</div>';
          
+         // Simulate network delay
          setTimeout(() => {
              container.innerHTML = '';
+             
+             // Real User Name from SDK or Fallback
+             let playerName = "You";
+             if (window.CrazyGames && window.CrazyGames.SDK) {
+                 // In a real implementation, you'd fetch the user's name here
+                 // playerName = await window.CrazyGames.SDK.user.getUser(); 
+             }
+
+             // Generate realistic "Top Players" (No botted names)
              const mockData = [
-                 { rank: 1, name: "Alpha", score: 500000 },
-                 { rank: 2, name: "Beta", score: 250000 },
-                 { rank: 3, name: "Gamma", score: 100000 },
-                 { rank: 4, name: "Delta", score: 50000 },
-                 { rank: 5, name: "You", score: this.gameState.totalBotsDeployed }
+                 { rank: 1, name: "CyberKing99", score: 5000000 },
+                 { rank: 2, name: "RoboMaster", score: 2500000 },
+                 { rank: 3, name: "ClickElite", score: 1000000 },
+                 { rank: 4, name: "TechNinja", score: 750000 },
+                 { rank: 5, name: "GearHead", score: 500000 },
+                 { rank: 6, name: "CircuitBreaker", score: 250000 },
+                 { rank: 7, name: "NeonPulse", score: 100000 },
+                 { rank: 999, name: playerName, score: this.gameState.totalBotsDeployed }
              ];
              
+             // Sort to ensure player is placed correctly if high score
+             mockData.sort((a, b) => b.score - a.score);
+             
+             // Re-assign ranks based on sort
+             mockData.forEach((p, i) => p.rank = i + 1);
+
              mockData.forEach(p => {
                  const row = document.createElement('div');
-                 row.className = `score-row rank-${p.rank}`;
+                 
+                 // Special styling for Top 3
+                 let rankClass = 'rank-other';
+                 let trophyIcon = '';
+                 
+                 if (p.rank === 1) { rankClass = 'rank-1-gold'; trophyIcon = '🥇'; }
+                 else if (p.rank === 2) { rankClass = 'rank-2-silver'; trophyIcon = '🥈'; }
+                 else if (p.rank === 3) { rankClass = 'rank-3-bronze'; trophyIcon = '🥉'; }
+                 
+                 row.className = `score-row ${rankClass}`;
+                 
+                 // Highlight the player
+                 if (p.name === playerName) row.classList.add('is-player');
+
                  row.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        <span class="rank-badge">${p.rank}</span>
-                        <span>${p.name}</span>
+                    <div class="score-left">
+                        <span class="rank-badge">${trophyIcon || '#' + p.rank}</span>
+                        <span class="player-name">${p.name}</span>
                     </div>
-                    <span>${this.formatNumber(p.score)} Bots</span>
+                    <span class="score-val">${this.formatNumber(p.score)}</span>
                  `;
                  container.appendChild(row);
              });
@@ -1487,6 +1653,63 @@ class RoboClicker {
     startGameLoop() {
         setInterval(() => {
             const now = Date.now();
+
+            // --- HEAT SYSTEM LOGIC ---
+            if (this.heat > 0) {
+                // Decay Logic
+                let decay = 1.5;
+                if (this.heat >= 98) decay = 0.3; // Much slower decay when at max (Stress Free)
+                
+                this.heat = Math.max(0, this.heat - decay); 
+                
+                // Update UI
+                if (this.els.heatFill) {
+                    const visualHeight = Math.min(115, this.heat); 
+                    this.els.heatFill.style.height = `${visualHeight}%`;
+                    
+                    // Tier 2X (50%)
+                    const label2x = document.getElementById('heat-label-2x');
+                    if (this.heat >= 50) {
+                        if (label2x) label2x.classList.add('active');
+                    } else {
+                        if (label2x) label2x.classList.remove('active');
+                    }
+
+                    // Tier 5X (Max)
+                    const text5x = document.getElementById('heat-text-5x');
+                    if (this.heat >= 98) {
+                        this.els.heatFill.classList.add('max');
+                        if (this.els.heatBulb) this.els.heatBulb.classList.add('active');
+                        
+                        this.els.heatFire.classList.remove('hidden');
+                        if (text5x) {
+                            text5x.classList.remove('hidden');
+                            text5x.classList.add('active');
+                        }
+                        
+                        if (this.els.heatSystem) this.els.heatSystem.classList.add('shaking');
+                    } else {
+                        this.els.heatFill.classList.remove('max');
+                        if (this.els.heatBulb) this.els.heatBulb.classList.remove('active');
+                        
+                        this.els.heatFire.classList.add('hidden');
+                        if (text5x) {
+                            text5x.classList.add('hidden');
+                            text5x.classList.remove('active');
+                        }
+                        
+                        if (this.els.heatSystem) this.els.heatSystem.classList.remove('shaking');
+                    }
+                }
+            } else if (this.els.heatFill) {
+                 this.els.heatFill.style.height = '0%';
+            }
+            
+            // --- IDLE CHECK ---
+            if (!this.isIdle && (now - (this.lastClickTime || now)) > 10000) {
+                this.isIdle = true;
+                if (this.els.idlePrompt) this.els.idlePrompt.classList.remove('hidden');
+            }
 
             // Auto Income
             const autoIncome = this.getAutoPower();
@@ -1509,8 +1732,14 @@ class RoboClicker {
             // Auto-Clicker Upgrade Logic
             const autoClickLvl = this.gameState.upgrades['auto_clicker'].level;
             if (autoClickLvl > 0) {
+                // Show sentinel if hidden (e.g. on load)
+                if (this.els.sentinelBot && this.els.sentinelBot.classList.contains('hidden')) {
+                     this.els.sentinelBot.classList.remove('hidden');
+                }
+
                 if (Math.random() < (0.1 * autoClickLvl)) {
-                     this.clickHero(null);
+                     // Pass true to prevent XP gain
+                     this.clickHero(null, true);
                 }
             }
 
@@ -1542,27 +1771,47 @@ class RoboClicker {
         const container = document.getElementById('active-boosts-container');
         if (!container) return;
         
-        container.innerHTML = '';
         const now = Date.now();
-        
+        const activeTypes = [];
+
         for (const [type, endTime] of Object.entries(this.adManager.boosts)) {
             if (endTime > now) {
+                activeTypes.push(type);
                 const remaining = Math.ceil((endTime - now) / 1000);
                 
                 let label = type.toUpperCase();
                 let icon = '⚡';
                 if (type === 'turbo') { label = 'TURBO'; icon = '🔥'; }
                 if (type === 'auto') { label = 'OVERCLOCK'; icon = '⚙️'; }
+                if (type === 'lucky') { label = 'LUCKY'; icon = '🍀'; }
                 
-                const pill = document.createElement('div');
-                pill.className = `boost-pill type-${type}`;
-                pill.innerHTML = `
+                let pill = document.getElementById(`boost-pill-${type}`);
+                if (!pill) {
+                    pill = document.createElement('div');
+                    pill.id = `boost-pill-${type}`;
+                    pill.className = `boost-pill type-${type}`;
+                    container.appendChild(pill);
+                }
+                
+                const contentHTML = `
                     <div class="boost-icon-wrapper">${icon}</div>
                     <div>${label}: ${remaining}s</div>
                 `;
-                container.appendChild(pill);
+                
+                // Only update if text changed
+                if (pill.innerHTML !== contentHTML) {
+                    pill.innerHTML = contentHTML;
+                }
             }
         }
+        
+        // Cleanup expired pills
+        Array.from(container.children).forEach(child => {
+            const type = child.id.replace('boost-pill-', '');
+            if (!activeTypes.includes(type)) {
+                child.remove();
+            }
+        });
     }
 
     startAutoSave() { setInterval(() => this.saveGame(), 30000); }
@@ -1576,8 +1825,23 @@ class RoboClicker {
         const save = localStorage.getItem('roboClickerElite');
         if (save) {
             const data = JSON.parse(save);
-            // Deep merge logic simplified for this structure
+            
+            // Preserve default upgrades structure
+            const defaultUpgrades = this.gameState.upgrades;
+            
+            // Merge basic state
             this.gameState = { ...this.gameState, ...data };
+            
+            // Fix Upgrades (Ensure new upgrades exist in save)
+            this.gameState.upgrades = { ...defaultUpgrades }; // Reset to defaults first
+            if (data.upgrades) {
+                for (const key in defaultUpgrades) {
+                    if (data.upgrades[key]) {
+                        // Keep level, but use default config (cost, power, etc)
+                        this.gameState.upgrades[key].level = data.upgrades[key].level;
+                    }
+                }
+            }
             
             // Ensure evolution object exists if loading old save
             if (!this.gameState.evolution) {
