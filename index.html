@@ -30,6 +30,13 @@
         <div class="bg-shape shape-3"></div>
     </div>
 
+    <!-- REBIRTH OVERLAY -->
+    <div id="rebirth-overlay">
+        <div class="rebirth-title-anim">REBIRTH SUCCESS!</div>
+        <div class="rebirth-sub-anim">MULTIPLIER INCREASED TO</div>
+        <div id="rebirth-mult-display" class="rebirth-mult-anim">2X</div>
+    </div>
+
     <div class="game-wrapper">
         <!-- HUD -->
         <div class="top-hud">
@@ -68,21 +75,16 @@
 
         <!-- Main Game Area -->
         <div class="main-stage">
+            <!-- HEAT SYSTEM MOVED INSIDE CLICK PAD -->
             <div class="hero-section">
                 
-                <!-- HEAT SYSTEM (Rage Bar) -->
-                <div class="heat-system">
-                    <div class="heat-bulb-top" id="heat-bulb">
-                        <div id="heat-text-5x" class="heat-text-5x hidden">5X</div>
-                    </div>
-                    <div class="heat-bar-container">
-                        <div class="heat-marker m-2x"></div>
-                        <div id="heat-fill" class="heat-fill"></div>
-                        <div id="heat-fire" class="heat-fire hidden"></div>
-                    </div>
+                <!-- TURBO OVERLAY UI -->
+                <div id="turbo-overlay" class="hidden">
+                    <div class="turbo-text">TURBO MODE</div>
+                    <div class="turbo-timer" id="turbo-timer">00:00</div>
                 </div>
-
-                <!-- Evolution / Fusion UI -->
+                
+                <!-- Evolution Gauge - Addictive Design -->
                 <div class="fusion-container">
                     <div class="fusion-label">
                         <span>Evolution Progress</span>
@@ -105,6 +107,19 @@
 
                 <!-- Click Area -->
                 <div class="click-pad">
+                    <!-- HEAT SYSTEM (Energy Core) -->
+                    <div class="heat-system">
+                        <div class="heat-multiplier-text" id="heat-mult-text">5X</div>
+                        <div class="heat-bulb" id="heat-bulb"></div>
+                        <div class="heat-core-frame">
+                            <div class="heat-segment"></div>
+                            <div class="heat-segment"></div>
+                            <div class="heat-segment"></div>
+                            <div id="heat-fill-bar" class="heat-fill-bar"></div>
+                            <div class="heat-lightning hidden" id="heat-lightning"></div>
+                        </div>
+                    </div>
+
                     <div id="hero-robot" class="hero-robot tier-0">
                         <div class="robot-glow"></div>
                         <div class="robot-head">
@@ -123,29 +138,13 @@
                             <div class="arm right"><div class="hand"></div></div>
                         </div>
                     </div>
+                    
+                    <!-- FLYING DRONES CONTAINER -->
+                    <div id="flying-drones-container"></div>
                 </div>
 
                 <!-- Active Boosts (Bottom Left of Hero Section) -->
                 <div id="active-boosts-container" class="boosts-container"></div>
-                
-                <!-- Sentinel Bot (Auto Clicker Visual) -->
-                <div id="sentinel-bot" class="sentinel-bot hidden">
-                    <div class="drone-body">
-                        <div class="drone-chassis">
-                            <div class="drone-scanner"></div>
-                            <div class="drone-detail-line"></div>
-                        </div>
-                        <div class="drone-wing wing-top"></div>
-                        <div class="drone-wing wing-bottom"></div>
-                        <div class="drone-thruster">
-                            <div class="thruster-flame"></div>
-                        </div>
-                        <div class="drone-barrel">
-                            <div class="muzzle-flash"></div>
-                        </div>
-                    </div>
-                    <div class="sentinel-laser"></div>
-                </div>
             </div>
 
             <!-- Upgrades Panel -->
