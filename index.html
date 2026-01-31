@@ -45,9 +45,17 @@
                     <div class="currency-icon-wrapper">$</div>
                     <span id="money-count">0</span>
                 </div>
+                <div class="currency-container" id="gems-display-container" style="border-color: #9b59b6; color: #9b59b6; background: #fbf2ff;">
+                    <div class="currency-icon-wrapper" style="background: #9b59b6; color: white;">💎</div>
+                    <span id="gems-count">0</span>
+                </div>
                 <div class="stat-pill">
+                    <span class="icon-sm"><i class="fa-solid fa-arrow-pointer"></i></span>
+                    <span id="bot-value-stat">1</span>
+                </div>
+                <div class="stat-pill multiplier-pill">
                     <span class="icon-sm"><i class="fa-solid fa-bolt"></i></span>
-                    <span id="bot-value-stat">1</span>X Multiplier
+                    <span id="multiplier-stat">Multiplier: 1x</span>
                 </div>
                 <div class="stat-pill">
                     <span class="icon-sm"><i class="fa-solid fa-robot"></i></span>
@@ -63,7 +71,7 @@
                     <i class="fa-solid fa-book-open"></i>
                     <div id="index-badge" class="notification-badge hidden">!</div>
                 </button>
-                <button id="daily-reward-btn" class="icon-btn" title="Daily Rewards">
+                <button id="daily-reward-btn" class="icon-btn hidden" title="Daily Rewards">
                     <i class="fa-solid fa-calendar-check"></i>
                     <div id="daily-badge" class="notification-badge hidden">!</div>
                 </button>
@@ -75,6 +83,7 @@
 
         <!-- Main Game Area -->
         <div class="main-stage">
+            
             <!-- HEAT SYSTEM MOVED INSIDE CLICK PAD -->
             <div class="hero-section">
                 
@@ -109,7 +118,7 @@
                 <div class="click-pad">
                     <!-- HEAT SYSTEM (Energy Core) -->
                     <div class="heat-system">
-                        <div class="heat-multiplier-text" id="heat-mult-text">2X</div>
+                        <div class="heat-multiplier-text" id="heat-mult-text">Multiplier: 2X</div>
                         <div class="heat-bulb" id="heat-bulb"></div>
                         <div class="heat-core-frame">
                             <div class="heat-segment"></div>
@@ -147,13 +156,23 @@
                 <div id="active-boosts-container" class="boosts-container"></div>
             </div>
 
-            <!-- Upgrades Panel -->
-            <div class="right-panel">
+            <!-- Upgrades Panel (Moved to Right) -->
+            <div class="side-panel">
                 <div class="panel-header">
-                    <h2>UPGRADES</h2>
+                    <div class="tab-container">
+                        <button id="tab-upgrades" class="panel-tab active" onclick="game.switchTab('upgrades')">UPGRADES</button>
+                        <button id="tab-tasks" class="panel-tab" onclick="game.switchTab('tasks')">TASKS</button>
+                        <button id="tab-gems" class="panel-tab" onclick="game.switchTab('gems')" style="color: #9b59b6;">SHOP</button>
+                    </div>
                 </div>
                 <div id="upgrades-container" class="scrollable-content">
                     <!-- Upgrades injected by JS -->
+                </div>
+                <div id="tasks-container" class="scrollable-content hidden">
+                    <!-- Tasks injected by JS -->
+                </div>
+                <div id="gems-container" class="scrollable-content hidden">
+                    <!-- Gem Shop injected by JS -->
                 </div>
                 
                 <!-- Rebirth Button Area -->
@@ -167,9 +186,7 @@
     <!-- Bonus Drawer -->
     <div id="bonus-drawer" class="bonus-drawer">
         <div id="drawer-toggle" class="drawer-handle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>
-            </svg>
+            <i class="fa-solid fa-gift" style="font-size: 1.5rem;"></i>
             <div id="bonus-badge" class="notification-badge hidden">!</div>
         </div>
         
@@ -216,77 +233,89 @@
         </div>
     </div>
 
+    <!-- Daily Rewards Drawer (New) -->
+    <div id="daily-drawer" class="bonus-drawer daily-drawer-style">
+        <div id="daily-drawer-toggle" class="drawer-handle daily-handle">
+            <i class="fa-solid fa-calendar-check" style="font-size: 1.5rem;"></i>
+            <div id="daily-badge-drawer" class="notification-badge hidden">!</div>
+        </div>
+        
+        <h2 class="drawer-title">DAILY LOGIN</h2>
+        
+        <div class="daily-drawer-content">
+             <div id="daily-streak-grid" class="daily-scroll-container">
+                <!-- Injected -->
+            </div>
+            
+            <div class="daily-status">
+                <div id="daily-timer" class="hidden" style="font-size: 1.2rem; color: #555; margin-bottom: 10px;">
+                    Next reward in: 12h 30m
+                </div>
+                <button id="claim-daily-btn" class="action-btn" disabled>
+                    CLAIM REWARD
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modals -->
     <div id="modal-overlay" class="modal-overlay hidden">
         
         <!-- Rebirth Modal -->
         <div id="rebirth-modal" class="game-modal rebirth-theme hidden">
             <div class="modal-header">
-                <h2>REBIRTH!</h2>
+                <h2>PRESTIGE SYSTEM</h2>
                 <button class="close-modal-btn" data-target="rebirth-modal">×</button>
             </div>
             <div class="modal-body">
                 <div class="rebirth-info-grid">
                     <div class="rebirth-column left">
-                        <h3>CURRENT</h3>
-                        <div class="stat-row">Multiplier: <span class="current-mult highlight">1x</span></div>
+                        <h3>LIFETIME CASH</h3>
+                        <div class="stat-row"><span class="current-mult highlight">$0</span></div>
                     </div>
                     <div class="rebirth-arrow">➔</div>
                     <div class="rebirth-column right">
-                        <h3>NEW</h3>
-                        <div class="stat-row">Multiplier: <span class="new-mult highlight-green">2X</span></div>
+                        <h3>POINTS EARNED</h3>
+                        <div class="stat-row"><span class="new-mult highlight-green">+0 PP</span></div>
                     </div>
                 </div>
                 
                 <div class="rebirth-cost-box">
-                    COST: <span class="rebirth-cost-display">$1M</span>
+                    <span class="rebirth-cost-display">Next Point: $1M</span>
+                </div>
+
+                <div class="prestige-shop-container">
+                    <div class="shop-header">PRESTIGE SHOP (<span id="prestige-points-display">0</span> PP)</div>
+                    <div id="prestige-shop-grid" class="prestige-grid">
+                        <!-- Injected -->
+                    </div>
                 </div>
                 
                 <div class="rebirth-details">
                     <div class="detail-box keep">
                         <h4>YOU KEEP:</h4>
                         <ul>
-                            <li>✅ Robot Evolution</li>
-                            <li>✅ Unlocked Robots</li>
+                            <li>✅ Gems & Shop</li>
+                            <li>✅ Achievements</li>
                             <li>✅ Stats</li>
                         </ul>
                     </div>
                     <div class="detail-box lose">
                         <h4>RESET:</h4>
                         <ul>
-                            <li>❌ Current Money</li>
-                            <li>❌ Upgrades</li>
+                            <li>❌ Money & Upgrades</li>
+                            <li>❌ Drones & Evolution</li>
                         </ul>
                     </div>
                 </div>
 
                 <button id="confirm-rebirth-btn" class="rebirth-btn-action">
-                    REBIRTH FOR A 2X MULTIPLIER!
+                    PRESTIGE NOW
                 </button>
             </div>
         </div>
 
-        <!-- Daily Rewards -->
-        <div id="daily-rewards-modal" class="game-modal wide-modal hidden">
-            <div class="modal-header">
-                <h2>DAILY LOGIN REWARDS</h2>
-                <button class="close-modal-btn" data-target="daily-rewards-modal">×</button>
-            </div>
-            <div class="modal-body">
-                <div id="daily-streak-grid" class="daily-scroll-container">
-                    <!-- Injected -->
-                </div>
-                
-                <div class="daily-status">
-                    <div id="daily-timer" class="hidden" style="font-size: 1.2rem; color: #555; margin-bottom: 10px;">
-                        Next reward in: 12h 30m
-                    </div>
-                    <button id="claim-daily-btn" class="action-btn" disabled>
-                        CLAIM REWARD
-                    </button>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Settings -->
         <div id="settings-modal" class="game-modal hidden">
@@ -312,22 +341,6 @@
             </div>
         </div>
 
-        <!-- Offline Earnings Modal -->
-        <div id="offline-modal" class="game-modal hidden">
-            <div class="modal-header">
-                <h2>WELCOME BACK!</h2>
-                <button class="close-modal-btn" data-target="offline-modal">×</button>
-            </div>
-            <div class="modal-body text-center">
-                <div class="offline-icon" style="font-size: 3rem; margin-bottom: 10px;">🌙</div>
-                <div class="offline-info">
-                    <p>You were gone for <span id="offline-time" class="highlight-text">0h 0m</span></p>
-                    <p>Your robots earned:</p>
-                    <div id="offline-earnings" class="big-currency" style="font-size: 2rem; color: #f1c40f; margin: 10px 0;">$0</div>
-                </div>
-                <button id="claim-offline-btn" class="action-btn" style="width: 100%; margin-top: 15px;">COLLECT</button>
-            </div>
-        </div>
         
         <!-- Confirm Reset -->
         <div id="confirm-modal" class="game-modal hidden">

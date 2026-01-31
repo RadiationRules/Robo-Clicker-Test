@@ -235,7 +235,50 @@ body {
     box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
 }
 
-.icon { width: 28px; height: 28px; }
+/* Multiplier Stat - Bigger & Better */
+.multiplier-pill {
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: white;
+    border-color: #d35400;
+    font-size: 1.2rem; /* Bigger */
+    padding: 8px 20px;
+    box-shadow: 0 4px 10px rgba(241, 196, 15, 0.4);
+    animation: pulseMultStat 2s infinite;
+}
+
+.multiplier-pill i {
+    color: white; /* Icon white */
+    font-size: 1.1rem;
+}
+
+@keyframes pulseMultStat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 6px 15px rgba(241, 196, 15, 0.6); }
+    100% { transform: scale(1); }
+}
+
+/* Task Sections */
+.task-section {
+    margin-bottom: 25px;
+    background: #f8f9fa;
+    border-radius: 15px;
+    border: 2px solid #e9ecef;
+    overflow: hidden;
+}
+
+.task-section-title {
+    background: var(--dark);
+    color: white;
+    padding: 10px;
+    font-weight: 900;
+    text-align: center;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+.task-grid {
+    padding: 10px;
+}
 .icon-sm { width: 20px; height: 20px; }
 .icon-lg { width: 56px; height: 56px; }
 .icon-xl { width: 72px; height: 72px; }
@@ -464,7 +507,7 @@ body {
 .main-stage {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 380px; 
+    grid-template-columns: 1fr 380px; /* Upgrades on Right */
     gap: 20px;
     height: 0; 
     min-height: 0;
@@ -475,8 +518,8 @@ body {
     backdrop-filter: blur(10px);
 }
 
-/* UPGRADES - Standard */
-.right-panel {
+/* SIDE PANEL (Was Left Panel) */
+.side-panel {
     border: var(--border-width) solid var(--dark);
     border-radius: var(--radius);
     box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--dark);
@@ -486,6 +529,10 @@ body {
     height: 100%; /* Scale to bottom */
     background: white;
 }
+
+/* Old right-panel cleanup */
+.right-panel { display: none; }
+.left-panel { display: none; } /* Removed */
 
 .panel-header {
     background: white;
@@ -678,6 +725,166 @@ body {
     /* Removed text stroke for clarity */
 }
 
+/* --- TABS & TASKS --- */
+.tab-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.panel-tab {
+    flex: 1;
+    padding: 10px;
+    background: #eee;
+    border: none;
+    border-bottom: 4px solid #ccc;
+    font-family: var(--font-main);
+    font-size: 1.1rem;
+    color: #888;
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    transition: all 0.2s;
+}
+
+.panel-tab.active {
+    background: white;
+    color: var(--dark);
+    border-bottom: 4px solid var(--primary);
+    font-weight: 900;
+}
+
+.panel-tab:hover:not(.active) {
+    background: #f0f0f0;
+    color: #666;
+}
+
+/* TASKS LIST */
+.task-item {
+    background: #fff;
+    border: 3px solid #ddd;
+    border-radius: 15px;
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.task-item.completed {
+    border-color: var(--success);
+    background: #f0fff4;
+}
+
+.task-item.claimed {
+    opacity: 0.6;
+    background: #f9f9f9;
+    border-color: #eee;
+}
+
+.task-icon {
+    width: 50px;
+    height: 50px;
+    background: #eee;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #555;
+}
+
+.task-item.completed .task-icon {
+    background: var(--success);
+    color: white;
+}
+
+.task-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.task-desc {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--dark);
+}
+
+.task-reward {
+    font-size: 0.85rem;
+    color: #777;
+    font-weight: 700;
+}
+
+.gem-text {
+    color: #9b59b6; /* Purple for Gems */
+    font-weight: 900;
+}
+
+.task-progress-track {
+    width: 100%;
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.task-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.task-item.completed .task-progress-fill {
+    background: var(--success);
+}
+
+.task-action {
+    width: 80px;
+}
+
+.task-btn {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: #ccc;
+    color: white;
+    font-weight: 900;
+    font-size: 0.8rem;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.task-btn.claim-ready {
+    background: var(--success);
+    cursor: pointer;
+    box-shadow: 0 4px 0 #218c74;
+    animation: pulse 1s infinite;
+}
+
+.task-btn.claim-ready:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #218c74;
+}
+
+.task-btn.claim-ready:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 #218c74;
+}
+
+.task-btn.claimed {
+    background: transparent;
+    color: var(--success);
+    border: 2px solid var(--success);
+    cursor: default;
+}
+
 /* --- REBIRTH SECTION --- */
 .rebirth-trigger-btn {
     background: #8e44ad; /* Deep Purple */
@@ -813,6 +1020,89 @@ body {
 }
 .rebirth-btn-action:hover { transform: scale(1.05); box-shadow: 0 0 30px #e056fd; }
 .rebirth-btn-action:active { transform: scale(0.95); }
+
+/* Prestige Shop Grid */
+.prestige-shop-container {
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+.shop-header {
+    font-size: 1.2rem;
+    color: #f1c40f;
+    font-weight: 900;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.prestige-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.prestige-item {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.prestige-item.can-afford {
+    background: rgba(46, 204, 113, 0.2);
+    border-color: #2ecc71;
+}
+
+.prestige-item.maxed {
+    opacity: 0.5;
+    background: #000;
+}
+
+.p-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.p-name { font-weight: 900; color: #f1c40f; }
+.p-lvl { font-size: 0.7rem; color: #aaa; }
+
+.p-desc {
+    font-size: 0.7rem;
+    color: #ddd;
+    min-height: 30px;
+}
+
+.p-buy-btn {
+    width: 100%;
+    background: #8e44ad;
+    color: white;
+    border: none;
+    padding: 5px;
+    border-radius: 5px;
+    font-weight: 900;
+    cursor: pointer;
+    margin-top: auto;
+}
+
+.p-buy-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.prestige-item.can-afford .p-buy-btn {
+    background: #2ecc71;
+    box-shadow: 0 0 10px #2ecc71;
+}
 
 /* --- HERO ROBOT & EVOLUTION --- */
 .hero-section {
@@ -2348,11 +2638,12 @@ body {
         min-height: 0; 
         flex: 1;
         justify-content: center;
+        order: -1; /* Hero on top */
     }
     .click-pad { height: auto; flex: 1; }
     .hero-robot { transform: scale(0.85); }
     
-    .right-panel { 
+    .left-panel { 
         height: 100%; 
         border-radius: 25px 25px 0 0; /* Rounded top only */
         border-bottom: none;
@@ -2905,7 +3196,7 @@ body {
         min-height: 500px;
     }
     
-    .right-panel {
+    .left-panel {
         height: 100%;
     }
     
@@ -2932,13 +3223,14 @@ body {
     
     .hero-section {
         justify-content: center;
+        order: -1;
     }
     
     .hero-robot {
         transform: scale(0.9); /* Slightly smaller to fit */
     }
     
-    .right-panel {
+    .left-panel {
         height: 100%;
         border-radius: 20px 20px 0 0;
     }
@@ -2985,6 +3277,44 @@ body {
     }
     
     .upgrade-icon-box { width: 50px; height: 50px; font-size: 1.5rem; }
+}
+
+/* NEW DAILY DRAWER STYLES */
+.daily-drawer-style {
+    width: 600px; /* Landscape width */
+    max-width: 90vw; /* Responsive */
+    padding: 0;
+    overflow: visible;
+}
+
+.daily-handle {
+    top: calc(50% + 100px); /* Positioned BELOW bonus handle */
+    background: #0984e3; /* Blue Handle */
+}
+
+.daily-drawer-content {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Override card styles for daily drawer if needed */
+.day-card-infinite {
+    opacity: 0.5;
+    transform: scale(0.85);
+}
+
+.day-card-infinite.active-day {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.daily-status {
+    text-align: center;
+    margin-top: 15px;
 }
 
 /* 5. ROBOT PERSONALITY ANIMATIONS */
@@ -3039,7 +3369,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     right: auto;
-    font-size: 1.8rem; /* Smaller text */
+    font-size: 1.2rem; /* Smaller text to fit "Multiplier: 2X" */
     font-weight: 900;
     color: #e056fd;
     text-shadow: 0 0 10px #e056fd, 2px 2px 0 white;
@@ -3065,4 +3395,3 @@ body {
 .confetti-container {
     z-index: 9998; /* Just below Rebirth Overlay */
 }
-
