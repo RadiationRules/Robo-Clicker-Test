@@ -2052,7 +2052,7 @@ class RoboClicker {
             el = document.createElement('div');
             el.id = 'heat-mult-text';
             el.className = 'heat-multiplier-text';
-            el.textContent = "5X";
+            el.textContent = "2X";
             
             // Append to heat system or hero section
             const heatSys = document.querySelector('.heat-system');
