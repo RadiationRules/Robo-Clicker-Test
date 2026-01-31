@@ -2,16 +2,16 @@
 
 const ROBOT_TIERS = [
     { name: "Prototype X-1", multiplier: 1, class: "tier-0", desc: "Basic clicker unit.", rarity: "Common" },
-    { name: "Nano Scout", multiplier: 2, class: "tier-1", desc: "Agile reconnaissance bot.", rarity: "Common" },
-    { name: "Iron Guardian", multiplier: 4, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
-    { name: "Cobalt Striker", multiplier: 8, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
-    { name: "Plasma Sentinel", multiplier: 16, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
-    { name: "Golden Sovereign", multiplier: 32, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
-    { name: "Crimson Destroyer", multiplier: 64, class: "tier-6", desc: "Powered by unstable core.", rarity: "Epic" },
-    { name: "Void Walker", multiplier: 150, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
-    { name: "Nebula Titan", multiplier: 300, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
-    { name: "Galactic Warlord", multiplier: 1000, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
-    { name: "Celestial Prime", multiplier: 5000, class: "tier-10", desc: "God-tier technology.", rarity: "Godly" },
+    { name: "Scout", multiplier: 2, class: "tier-1", desc: "Agile reconnaissance bot.", rarity: "Common" },
+    { name: "Guardian", multiplier: 4, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
+    { name: "Cobalt", multiplier: 8, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
+    { name: "Sentinel", multiplier: 16, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
+    { name: "Sovereign", multiplier: 32, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
+    { name: "Mech", multiplier: 64, class: "tier-6", desc: "Powered by unstable core.", rarity: "Epic" },
+    { name: "Void", multiplier: 150, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
+    { name: "Titan", multiplier: 300, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
+    { name: "Warlord", multiplier: 1000, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
+    { name: "Celestial", multiplier: 5000, class: "tier-10", desc: "God-tier technology.", rarity: "Godly" },
     // New Tiers (12-24)
     { name: "Mecha-Rex", multiplier: 50000, class: "tier-12", desc: "Prehistoric fury reborn in steel.", rarity: "Epic" },
     { name: "Cyber-Samurai", multiplier: 100000, class: "tier-13", desc: "Blade faster than light.", rarity: "Epic" },
@@ -1149,12 +1149,10 @@ class RoboClicker {
         
         // --- UPDATED ICONS (FontAwesome) ---
         const icons = {
-            'cursor': '<i class="fa-solid fa-arrow-pointer"></i>',
+            'Click Value': '<i class="fa-solid fa-arrow-pointer"></i>',
             'add_drone': '<i class="fa-solid fa-helicopter"></i>', // Drone Icon
             'upgrade_drone': '<i class="fa-solid fa-bolt"></i>', // Power Icon
             'crit_money': '<i class="fa-solid fa-crosshairs"></i>',
-            'passive_mult': '<i class="fa-solid fa-money-bill-trend-up"></i>',
-            'discount': '<i class="fa-solid fa-tags"></i>'
         };
 
         for (const [key, upgrade] of Object.entries(this.gameState.upgrades)) {
