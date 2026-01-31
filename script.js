@@ -53,10 +53,10 @@ class RoboClicker {
 
             // Upgrades with descriptions - EXCLUSIVE & FUN
             upgrades: {
-                'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Cursor", desc: "+1 Per Click", type: "click" },
-                'add_drone': { level: 0, baseCost: 100, basePower: 1, name: "Deploy Drone", desc: "Deploys a Combat Unit", type: "action_add_drone" },
-                'upgrade_drone': { level: 0, baseCost: 500, basePower: 1, name: "Upgrade Drone", desc: "Faster Fire & More Speed", type: "action_upgrade_drone" },
-                'crit_money': { level: 0, baseCost: 1000, basePower: 1, name: "Critical Money", desc: "2x Money Chance", type: "effect_crit" },
+                'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
+                'add_drone': { level: 0, baseCost: 100, basePower: 1, name: "Deploy Drone", desc: "Deploys a Drone to Auto Click For You", type: "action_add_drone" },
+                'upgrade_drone': { level: 0, baseCost: 500, basePower: 1, name: "Upgrade Drone", desc: "Drones Get Faster and Deal More Damage", type: "action_upgrade_drone" },
+                'crit_money': { level: 0, baseCost: 1000, basePower: 1, name: "Critical Money", desc: "Better 2x Money Chance Each Click", type: "effect_crit" },
             },
             
             // Drone State
