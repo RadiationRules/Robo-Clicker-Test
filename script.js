@@ -12,7 +12,6 @@ const ROBOT_TIERS = [
     { name: "Nebula Titan", multiplier: 300, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
     { name: "Galactic Warlord", multiplier: 1000, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
     { name: "Celestial Prime", multiplier: 5000, class: "tier-10", desc: "God-tier technology.", rarity: "Godly" },
-    { name: "Omega Singularity", multiplier: 25000, class: "tier-11", desc: "The end of all things.", rarity: "Omega" },
     // New Tiers (12-24)
     { name: "Mecha-Rex", multiplier: 50000, class: "tier-12", desc: "Prehistoric fury reborn in steel.", rarity: "Epic" },
     { name: "Cyber-Samurai", multiplier: 100000, class: "tier-13", desc: "Blade faster than light.", rarity: "Epic" },
