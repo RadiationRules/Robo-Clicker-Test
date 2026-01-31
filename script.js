@@ -3,26 +3,22 @@
 const ROBOT_TIERS = [
     { name: "Prototype X-1", multiplier: 1, class: "tier-0", desc: "Basic clicker unit.", rarity: "Common" },
     { name: "Scout", multiplier: 2, class: "tier-1", desc: "Agile reconnaissance bot.", rarity: "Common" },
-    { name: "Guardian", multiplier: 4, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
-    { name: "Cobalt", multiplier: 8, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
-    { name: "Sentinel", multiplier: 16, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
-    { name: "Sovereign", multiplier: 32, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
-    { name: "Mech", multiplier: 64, class: "tier-6", desc: "Powered by unstable core.", rarity: "Epic" },
-    { name: "Void", multiplier: 150, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
-    { name: "Titan", multiplier: 300, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
-    { name: "Warlord", multiplier: 1000, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
-    { name: "Celestial", multiplier: 5000, class: "tier-10", desc: "God-tier technology.", rarity: "Godly" },
-    // New Tiers (12-24)
-    { name: "Mecha-Rex", multiplier: 50000, class: "tier-12", desc: "Prehistoric fury reborn in steel.", rarity: "Epic" },
-    { name: "Cyber-Samurai", multiplier: 100000, class: "tier-13", desc: "Blade faster than light.", rarity: "Epic" },
-    { name: "Heavy Siege Unit", multiplier: 250000, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
-    { name: "Storm Bringer", multiplier: 500000, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
-    { name: "Solar Archon", multiplier: 1000000, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
-    { name: "Lunar Phantom", multiplier: 2500000, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
-    { name: "Time Weaver", multiplier: 5000000, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
-    { name: "Dimensional Horror", multiplier: 15000000, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
-    { name: "Quantum Seraph", multiplier: 50000000, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
-    { name: "The Architect", multiplier: 100000000, class: "tier-21", desc: "Builder of universes.", rarity: "Omega" }
+    { name: "Guardian", multiplier: 2, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
+    { name: "Cobalt", multiplier: 5, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
+    { name: "Sentinel", multiplier: 5, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
+    { name: "Sovereign", multiplier: 5, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
+    { name: "Mech", multiplier: 10, class: "tier-6", desc: "Powered by unstable core.", rarity: "Epic" },
+    { name: "Void", multiplier: 10, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
+    { name: "Titan", multiplier: 25, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
+    { name: "Warlord", multiplier: 25, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
+    { name: "Heavy Siege Unit", multiplier: 25, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
+    { name: "Storm Bringer", multiplier: 25, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
+    { name: "Solar Archon", multiplier: 50, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
+    { name: "Lunar Phantom", multiplier: 50, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
+    { name: "Time Weaver", multiplier: 50, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
+    { name: "Dimensional Horror", multiplier: 100, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
+    { name: "Quantum Seraph", multiplier: 100, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
+    { name: "The Architect", multiplier: 100, class: "tier-21", desc: "Builder of universes.", rarity: "Omega" }
 ];
 
 class RoboClicker {
