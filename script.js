@@ -89,8 +89,8 @@ const TASKS_DATA = generateTasks();
 const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 
 const GEM_SHOP_ITEMS = {
-    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Auto-Clicker Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
-    'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Power", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
+    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
+    'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_gem_rush': { name: "Gem Finder", desc: "Small chance to find Gems on click", cost: 500, type: 'perm_passive', icon: 'fa-gem' }
 };
 
@@ -139,7 +139,7 @@ class RoboClicker {
                 'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
                 'add_drone': { level: 0, baseCost: 500, basePower: 1, name: "Deploy Drone", desc: "Deploys a Drone (Max 5)", type: "action_add_drone" },
                 'upgrade_drone': { level: 0, baseCost: 1000, basePower: 1, name: "Upgrade Drone", desc: "Drones Gain More Power", type: "action_upgrade_drone" },
-                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Money", desc: "Better 2x Money Chance Each Click", type: "effect_crit" },
+                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Money", desc: "Better 2X Critical Chance", type: "effect_crit" },
             },
             
             // Gem Shop State
