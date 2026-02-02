@@ -91,7 +91,8 @@ const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
-    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' }
+    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
+    'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone! (5x Money, 3x Speed)", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
 
 class RoboClicker {
@@ -137,6 +138,8 @@ class RoboClicker {
             // Upgrades with descriptions - EXCLUSIVE & FUN
             upgrades: {
                 'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
+                'auto_bot': { level: 0, baseCost: 150, basePower: 2, name: "Micro-Bot Swarm", desc: "Auto-clicks for you (Basic)", type: "auto" },
+                'lucky_strike': { level: 0, baseCost: 750, basePower: 0.5, name: "Jackpot Chip", desc: "+50% Critical Hit Damage (Addictive!)", type: "crit_damage" },
                 'add_drone': { level: 0, baseCost: 500, basePower: 1, name: "Deploy Drone", desc: "Deploys a Drone (Max 5)", type: "action_add_drone" },
                 'upgrade_drone': { level: 0, baseCost: 1000, basePower: 1, name: "Upgrade Drone", desc: "Drones Gain More Power", type: "action_upgrade_drone" },
                 'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Money", desc: "Better 2X Critical Chance", type: "effect_crit" },
@@ -716,7 +719,13 @@ class RoboClicker {
         amount *= heatMult;
 
         if (isCrit) {
-            amount *= 2; // Double Money
+            // Apply Critical Damage Multiplier (Base 2x + Upgrades)
+            let critMult = 2;
+            const jackpotUpgrade = this.gameState.upgrades['lucky_strike'];
+            if (jackpotUpgrade) {
+                critMult += (jackpotUpgrade.level * jackpotUpgrade.basePower);
+            }
+            amount *= critMult;
         }
 
         // Midas Chip Logic (Legacy check, kept safe)
@@ -1020,6 +1029,13 @@ class RoboClicker {
             this.gameState.gems -= item.cost;
             this.gameState.gemUpgrades[key] = true;
             
+            // Mega Drone Handling
+            if (key === 'mega_drone') {
+                 if (!this.gameState.drones) this.gameState.drones = [];
+                 this.gameState.drones.push({ tier: 'mega' });
+                 this.renderFlyingDrones();
+            }
+
             this.playNotificationSound();
             this.saveGame();
             this.updateDisplay();
@@ -1760,6 +1776,8 @@ class RoboClicker {
         // --- UPDATED ICONS (FontAwesome) ---
         const icons = {
             'Click Value': '<i class="fa-solid fa-arrow-pointer"></i>',
+            'auto_bot': '<i class="fa-solid fa-robot"></i>',
+            'lucky_strike': '<i class="fa-solid fa-clover"></i>',
             'add_drone': '<i class="fa-solid fa-helicopter"></i>', // Drone Icon
             'upgrade_drone': '<i class="fa-solid fa-bolt"></i>', // Power Icon
             'crit_money': '<i class="fa-solid fa-crosshairs"></i>',

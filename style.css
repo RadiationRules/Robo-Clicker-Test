@@ -437,7 +437,7 @@ body {
 /* --- ENERGY BAR BUZZ ANIMATION --- */
 /* Targeting the whole heat system container */
 .heat-system.energy-surge {
-    animation: violentShake 0.2s infinite;
+    /* animation: violentShake 0.2s infinite; REMOVED per request */
 }
 
 .heat-system.energy-surge .heat-core-frame {
@@ -445,6 +445,7 @@ body {
     border-color: #fff;
 }
 
+/* violentShake removed from bar, kept for text if needed or redefined */
 @keyframes violentShake {
     0% { transform: translate(0, -50%) rotate(0deg); }
     25% { transform: translate(-3px, calc(-50% + 3px)) rotate(-2deg); }
