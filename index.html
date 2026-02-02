@@ -161,7 +161,10 @@
                 <div class="panel-header">
                     <div class="tab-container">
                         <button id="tab-upgrades" class="panel-tab active" onclick="game.switchTab('upgrades')">UPGRADES</button>
-                        <button id="tab-tasks" class="panel-tab" onclick="game.switchTab('tasks')">TASKS</button>
+                        <button id="tab-tasks" class="panel-tab" onclick="game.switchTab('tasks')">
+                            TASKS
+                            <div id="tasks-badge" class="notification-badge hidden" style="top: -5px; right: -5px; width: 20px; height: 20px; font-size: 0.7rem;">!</div>
+                        </button>
                         <button id="tab-gems" class="panel-tab" onclick="game.switchTab('gems')" style="color: #9b59b6;">SHOP</button>
                     </div>
                 </div>

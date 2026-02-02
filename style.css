@@ -243,7 +243,6 @@ body {
     font-size: 1.2rem; /* Bigger */
     padding: 8px 20px;
     box-shadow: 0 4px 10px rgba(241, 196, 15, 0.4);
-    animation: pulseMultStat 2s infinite;
 }
 
 .multiplier-pill i {
@@ -251,37 +250,232 @@ body {
     font-size: 1.1rem;
 }
 
-@keyframes pulseMultStat {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); box-shadow: 0 6px 15px rgba(241, 196, 15, 0.6); }
-    100% { transform: scale(1); }
+/* --- ENHANCED TASK SECTION --- */
+.task-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
 }
 
-/* Task Sections */
-.task-section {
-    margin-bottom: 25px;
-    background: #f8f9fa;
-    border-radius: 15px;
-    border: 2px solid #e9ecef;
+.task-item {
+    background: white;
+    border: 4px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
     overflow: hidden;
 }
 
-.task-section-title {
-    background: var(--dark);
-    color: white;
-    padding: 10px;
-    font-weight: 900;
-    text-align: center;
-    font-size: 1.1rem;
-    letter-spacing: 1px;
+/* Priority Sorting Styles */
+.task-item.priority-claim {
+    order: -2; /* Force to top */
+    border-color: #2ecc71;
+    background: #f0fff4;
+    box-shadow: 0 10px 20px rgba(46, 204, 113, 0.2);
+    transform: scale(1.02);
+    animation: pulseTask 2s infinite;
 }
 
-.task-grid {
-    padding: 10px;
+.task-item.priority-active {
+    order: 0;
 }
-.icon-sm { width: 20px; height: 20px; }
-.icon-lg { width: 56px; height: 56px; }
-.icon-xl { width: 72px; height: 72px; }
+
+.task-item.priority-done {
+    order: 10; /* Force to bottom */
+    opacity: 0.6;
+    filter: grayscale(1);
+    background: #f5f5f5;
+    border-color: #eee;
+    transform: scale(0.98);
+}
+
+@keyframes pulseTask {
+    0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+}
+
+.task-icon {
+    width: 60px;
+    height: 60px;
+    background: #f0f0f0;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    color: #555;
+    border: 3px solid #ddd;
+    flex-shrink: 0;
+}
+
+.task-item.priority-claim .task-icon {
+    background: #2ecc71;
+    color: white;
+    border-color: #27ae60;
+}
+
+.task-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.task-desc {
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--dark);
+}
+
+.task-reward {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.task-reward .gem-val {
+    color: #9b59b6;
+    background: #fbf2ff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #e056fd;
+}
+
+/* Fancy Progress Bar */
+.task-progress-track {
+    width: 100%;
+    height: 12px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 5px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.task-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    width: 0%;
+    border-radius: 6px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+/* Shine effect on progress bar */
+.task-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(
+        45deg,
+        rgba(255,255,255,0) 25%,
+        rgba(255,255,255,0.5) 50%,
+        rgba(255,255,255,0) 75%
+    );
+    background-size: 200% 100%;
+    animation: shineBar 2s infinite linear;
+}
+
+@keyframes shineBar {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.task-item.priority-claim .task-progress-fill {
+    background: linear-gradient(90deg, #2ecc71 0%, #2bd471 100%);
+}
+
+.task-action {
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.task-btn {
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.9rem;
+    cursor: default;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.task-btn.claim-ready {
+    background: #2ecc71;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #27ae60;
+    animation: bounceBtn 1s infinite;
+}
+
+.task-btn.claim-ready:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #27ae60;
+}
+
+.task-btn.claim-ready:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 #27ae60;
+}
+
+@keyframes bounceBtn {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* --- ENERGY BAR BUZZ ANIMATION --- */
+/* Targeting the whole heat system container */
+.heat-system.energy-surge {
+    animation: violentShake 0.2s infinite;
+}
+
+.heat-system.energy-surge .heat-core-frame {
+    box-shadow: 0 0 20px #e056fd, 0 0 40px #e056fd; /* Intense Glow */
+    border-color: #fff;
+}
+
+@keyframes violentShake {
+    0% { transform: translate(0, -50%) rotate(0deg); }
+    25% { transform: translate(-3px, calc(-50% + 3px)) rotate(-2deg); }
+    50% { transform: translate(3px, calc(-50% - 3px)) rotate(2deg); }
+    75% { transform: translate(-3px, calc(-50% - 3px)) rotate(-2deg); }
+    100% { transform: translate(0, -50%) rotate(0deg); }
+}
+
+/* Make the bulb go crazy too */
+.heat-system.energy-surge .heat-bulb {
+    background: white;
+    box-shadow: 0 0 30px white;
+    animation: flashBulb 0.1s infinite;
+}
+
+@keyframes flashBulb {
+    0% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* Notification Badge Pulse */
+.notification-badge.active-pulse {
+    animation: badgePulse 1s infinite;
+}
+
+@keyframes badgePulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+    70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+}
 
 .hud-controls {
     display: flex;
@@ -1466,13 +1660,13 @@ body {
 /* 5X MULTIPLIER ANIMATION */
 .heat-multiplier-text {
     position: absolute;
-    top: -40px; /* Above the bulb */
+    top: -60px; /* Adjusted for bigger size */
     left: 50%;
     transform: translateX(-50%);
-    font-size: 1.5rem; 
+    font-size: 3.5rem; /* Much Bigger */
     font-weight: 900;
     color: #e056fd;
-    text-shadow: 0 0 10px #e056fd, 2px 2px 0 white;
+    text-shadow: 0 0 10px #e056fd, 3px 3px 0 white;
     z-index: 100;
     pointer-events: none;
     opacity: 0;
@@ -1482,7 +1676,15 @@ body {
 
 .heat-multiplier-text.active {
     opacity: 1;
-    animation: pulseMult 0.5s infinite alternate;
+    animation: buzzText 0.1s infinite; /* Buzz effect */
+}
+
+@keyframes buzzText {
+    0% { transform: translateX(-50%) scale(1) rotate(0deg); }
+    25% { transform: translateX(-52%) scale(1.1) rotate(-3deg); }
+    50% { transform: translateX(-50%) scale(1.2) rotate(0deg); }
+    75% { transform: translateX(-48%) scale(1.1) rotate(3deg); }
+    100% { transform: translateX(-50%) scale(1) rotate(0deg); }
 }
 
 /* 3. FLYING DRONES & LASERS (NEON SWARM) */
@@ -3362,34 +3564,8 @@ body {
     100% { transform: translate(0); }
 }
 
-/* 5X MULTIPLIER ANIMATION */
-.heat-multiplier-text {
-    position: absolute;
-    top: -50px; /* Above the bar */
-    left: 50%;
-    transform: translateX(-50%);
-    right: auto;
-    font-size: 1.2rem; /* Smaller text to fit "Multiplier: 2X" */
-    font-weight: 900;
-    color: #e056fd;
-    text-shadow: 0 0 10px #e056fd, 2px 2px 0 white;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    white-space: nowrap;
-}
-
-.heat-multiplier-text.active {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.2);
-    animation: pulseMult 0.5s infinite alternate;
-}
-
-@keyframes pulseMult {
-    from { transform: translateX(-50%) scale(1.2); text-shadow: 0 0 20px #e056fd; }
-    to { transform: translateX(-50%) scale(1.3); text-shadow: 0 0 40px #e056fd, 0 0 10px white; }
-}
+/* 5X MULTIPLIER ANIMATION - Merged above */
+/* Removed duplicate block */
 
 /* Confetti Z-Index Fix */
 .confetti-container {

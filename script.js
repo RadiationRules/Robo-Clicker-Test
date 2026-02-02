@@ -91,7 +91,7 @@ const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
-    'perm_gem_rush': { name: "Gem Finder", desc: "Small chance to find Gems on click", cost: 500, type: 'perm_passive', icon: 'fa-gem' }
+    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' }
 };
 
 class RoboClicker {
@@ -399,6 +399,8 @@ class RoboClicker {
             tasksContainer: document.getElementById('tasks-container'), // New
             gemsContainer: document.getElementById('gems-container'), // New
             
+            tasksBadge: document.getElementById('tasks-badge'), // New Notification Badge
+            
             modalOverlay: document.getElementById('modal-overlay'),
             rebirthModal: document.getElementById('rebirth-modal'),
             dailyModal: document.getElementById('daily-rewards-modal'),
@@ -686,14 +688,6 @@ class RoboClicker {
             // Track Total Clicks
             this.gameState.totalClicks = (this.gameState.totalClicks || 0) + 1;
             
-            // GEM RUSH CHANCE
-            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['perm_gem_rush']) {
-                if (Math.random() < 0.005) { // 0.5% chance
-                    this.gameState.gems++;
-                    this.spawnDamageNumber("GEM!", event.clientX, event.clientY - 60, '#9b59b6');
-                }
-            }
-
             this.checkTaskProgress();
         }
 
@@ -742,6 +736,11 @@ class RoboClicker {
             this.gameState.totalBotsDeployed++;
             // Add XP per click
             let xpGain = 0.5;
+
+            // Gem Shop Evo Boost
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['perm_evo_speed']) {
+                xpGain *= 2;
+            }
             
             // Prestige XP Boost
             if (this.gameState.prestige && this.gameState.prestige.upgrades['pp_xp']) {
@@ -1091,71 +1090,76 @@ class RoboClicker {
         
         container.innerHTML = '';
         
-        // Group by Tier
-        const tasksByTier = {};
+        const grid = document.createElement('div');
+        grid.className = 'task-grid'; 
         
-        TASKS_DATA.forEach(task => {
-            if (!tasksByTier[task.tier]) tasksByTier[task.tier] = [];
-            tasksByTier[task.tier].push(task);
+        // 1. Prepare and Sort Tasks
+        const renderList = TASKS_DATA.map(task => {
+            const state = this.gameState.tasks[task.id];
+            const isCompleted = state.progress >= task.target;
+            const isClaimed = state.claimed;
+            
+            // Assign priority for sorting
+            let priority = 1; // Default: Active
+            if (isClaimed) priority = 2; // Bottom
+            if (isCompleted && !isClaimed) priority = 0; // Top
+            
+            return { task, state, isCompleted, isClaimed, priority };
         });
         
-        // Iterate Tiers
-        Object.keys(tasksByTier).sort((a,b) => a-b).forEach(tier => {
-            const tasks = tasksByTier[tier];
-            
-            // Check if tier is unlocked (previous tier completed? or just show all?)
-            // For cleaner UI, let's show all for now, or collapsible sections.
-            // User asked for sections.
-            
-            const section = document.createElement('div');
-            section.className = 'task-section';
-            section.innerHTML = `<div class="task-section-title">TIER ${tier}</div>`;
-            
-            const grid = document.createElement('div');
-            grid.className = 'task-grid'; // CSS Grid for 2x2 layout per tier if space
-            
-            tasks.forEach(task => {
-                const state = this.gameState.tasks[task.id];
-                const isCompleted = state.progress >= task.target;
-                const isClaimed = state.claimed;
-                
-                // If claimed, maybe hide or dim? User wants organized.
-                // Let's keep them but style as done.
-                
-                let pct = (state.progress / task.target) * 100;
-                if (pct > 100) pct = 100;
-                
-                const div = document.createElement('div');
-                div.className = `task-item ${isClaimed ? 'claimed' : ''} ${isCompleted && !isClaimed ? 'completed' : ''}`;
-                
-                let btnHTML = '';
-                if (isClaimed) {
-                    btnHTML = `<button class="task-btn claimed" disabled>DONE</button>`;
-                } else if (isCompleted) {
-                    btnHTML = `<button class="task-btn claim-ready" onclick="game.claimTask('${task.id}')">CLAIM</button>`;
-                } else {
-                    btnHTML = `<button class="task-btn" disabled>${this.formatNumber(state.progress)}/${this.formatNumber(task.target)}</button>`;
-                }
-                
-                div.innerHTML = `
-                    <div class="task-icon"><i class="fa-solid ${task.icon}"></i></div>
-                    <div class="task-info">
-                        <div class="task-desc">${task.desc}</div>
-                        <div class="task-reward">Reward: <span class="gem-text">💎 ${task.reward}</span></div>
-                        <div class="task-progress-track">
-                            <div class="task-progress-fill" style="width: ${pct}%"></div>
-                        </div>
-                    </div>
-                    <div class="task-action">
-                        ${btnHTML}
-                    </div>
-                `;
-                grid.appendChild(div);
-            });
-            
-            section.appendChild(grid);
-            container.appendChild(section);
+        // Sort: Claimable (0) -> Active (1) -> Claimed (2)
+        // Secondary Sort: Active tasks by % completion (descending)
+        renderList.sort((a, b) => {
+            if (a.priority !== b.priority) return a.priority - b.priority;
+            if (a.priority === 1) {
+                const pctA = a.state.progress / a.task.target;
+                const pctB = b.state.progress / b.task.target;
+                return pctB - pctA; // Higher % first
+            }
+            return a.task.tier - b.task.tier; // Default tier sort
         });
+        
+        // 2. Render Sorted List
+        renderList.forEach(item => {
+            const { task, state, isCompleted, isClaimed, priority } = item;
+            
+            let pct = (state.progress / task.target) * 100;
+            if (pct > 100) pct = 100;
+            
+            const div = document.createElement('div');
+            // Add priority class for CSS styling hooks
+            let priorityClass = 'priority-active';
+            if (priority === 0) priorityClass = 'priority-claim';
+            if (priority === 2) priorityClass = 'priority-done';
+            
+            div.className = `task-item ${priorityClass}`;
+            
+            let btnHTML = '';
+            if (isClaimed) {
+                btnHTML = `<button class="task-btn claimed" disabled><i class="fa-solid fa-check"></i> DONE</button>`;
+            } else if (isCompleted) {
+                btnHTML = `<button class="task-btn claim-ready" onclick="game.claimTask('${task.id}')">CLAIM</button>`;
+            } else {
+                btnHTML = `<button class="task-btn" disabled>${this.formatNumber(state.progress)} / ${this.formatNumber(task.target)}</button>`;
+            }
+            
+            div.innerHTML = `
+                <div class="task-icon"><i class="fa-solid ${task.icon}"></i></div>
+                <div class="task-info">
+                    <div class="task-desc">${task.desc}</div>
+                    <div class="task-reward">Reward: <span class="gem-val">💎 ${task.reward}</span></div>
+                    <div class="task-progress-track">
+                        <div class="task-progress-fill" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+                <div class="task-action">
+                    ${btnHTML}
+                </div>
+            `;
+            grid.appendChild(div);
+        });
+        
+        container.appendChild(grid);
     }
 
     showSmartAdOffer(targetBtn, key) {
@@ -1478,6 +1482,25 @@ class RoboClicker {
                 indexBadge.classList.remove('hidden');
             } else {
                 indexBadge.classList.add('hidden');
+            }
+        }
+
+        // Tasks Notification
+        let hasCompletedTasks = false;
+        TASKS_DATA.forEach(task => {
+            const state = this.gameState.tasks[task.id];
+            if (state && !state.claimed && state.progress >= task.target) {
+                hasCompletedTasks = true;
+            }
+        });
+        
+        if (this.els.tasksBadge) {
+            if (hasCompletedTasks) {
+                this.els.tasksBadge.classList.remove('hidden');
+                this.els.tasksBadge.classList.add('active-pulse');
+            } else {
+                this.els.tasksBadge.classList.add('hidden');
+                this.els.tasksBadge.classList.remove('active-pulse');
             }
         }
     }
@@ -2721,10 +2744,10 @@ class RoboClicker {
 
                     // Max State Effects
                     if (this.heat >= 90) {
-                        if (this.els.heatSystem) this.els.heatSystem.classList.add('shaking');
+                        if (this.els.heatSystem) this.els.heatSystem.classList.add('energy-surge');
                         if (this.els.heatLightning) this.els.heatLightning.classList.remove('hidden');
                     } else {
-                        if (this.els.heatSystem) this.els.heatSystem.classList.remove('shaking');
+                        if (this.els.heatSystem) this.els.heatSystem.classList.remove('energy-surge');
                         if (this.els.heatLightning) this.els.heatLightning.classList.add('hidden');
                     }
                 }
