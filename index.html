@@ -183,53 +183,62 @@
         </div>
     </div>
 
-    <!-- Bonus Drawer -->
+    <!-- Bonus Drawer (Left Sidebar) -->
     <div id="bonus-drawer" class="bonus-drawer">
-        <div id="drawer-toggle" class="drawer-handle">
-            <i class="fa-solid fa-gift" style="font-size: 1.5rem;"></i>
-            <div id="bonus-badge" class="notification-badge hidden">!</div>
+        <div class="drawer-header">
+            <h2 class="drawer-title-text">POWER UPS</h2>
+            <button id="close-bonus-btn" class="close-modal-btn">×</button>
         </div>
         
-        <h2 class="drawer-title">AD REWARDS</h2>
-        
-        <div class="bonus-card">
-            <div class="best-value-badge">HOT!</div>
-            <div class="bonus-icon turbo-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
-            <div class="bonus-info">
-                <div class="bonus-title">Turbo Surge</div>
-                <div class="bonus-desc">3x Income (60s)</div>
+        <div class="bonus-list">
+            <div class="bonus-card">
+                <div class="best-value-badge">HOT!</div>
+                <div class="bonus-icon turbo-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                <div class="bonus-info">
+                    <div class="bonus-title">Turbo Surge</div>
+                    <div class="bonus-desc">3x Income (60s)</div>
+                </div>
+                <div class="bonus-action">
+                    <button class="bonus-btn" onclick="game.watchAd('turbo')">
+                        <span><i class="fa-solid fa-video"></i> WATCH</span>
+                    </button>
+                </div>
             </div>
-            <div class="bonus-action">
-                <button class="bonus-btn" onclick="game.watchAd('turbo')">
-                    <span><i class="fa-solid fa-angles-right"></i> <i class="fa-solid fa-gift"></i> WATCH</span>
-                </button>
+
+            <div class="bonus-card">
+                <div class="bonus-icon auto-icon"><i class="fa-solid fa-gears"></i></div>
+                <div class="bonus-info">
+                    <div class="bonus-title">Overclock</div>
+                    <div class="bonus-desc">10x Speed (30s)</div>
+                </div>
+                <div class="bonus-action">
+                    <button class="bonus-btn" onclick="game.watchAd('auto')">
+                        <span><i class="fa-solid fa-video"></i> WATCH</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bonus-card">
+                <div class="bonus-icon auto-icon"><i class="fa-solid fa-robot"></i></div>
+                <div class="bonus-info">
+                    <div class="bonus-title">Bot Swarm</div>
+                    <div class="bonus-desc">Auto Clicks (30s)</div>
+                </div>
+                <div class="bonus-action">
+                    <button class="bonus-btn" onclick="game.watchAd('auto_clicker')">
+                        <span><i class="fa-solid fa-video"></i> WATCH</span>
+                    </button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="bonus-card">
-            <div class="bonus-icon auto-icon"><i class="fa-solid fa-gears"></i></div>
-            <div class="bonus-info">
-                <div class="bonus-title">Overclock</div>
-                <div class="bonus-desc">10x Speed (30s)</div>
-            </div>
-            <div class="bonus-action">
-                <button class="bonus-btn" onclick="game.watchAd('auto')">
-                    <span><i class="fa-solid fa-angles-right"></i> <i class="fa-solid fa-gift"></i> WATCH</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="bonus-card">
-            <div class="bonus-icon lucky-icon"><i class="fa-solid fa-clover"></i></div>
-            <div class="bonus-info">
-                <div class="bonus-title">Lucky Strike</div>
-                <div class="bonus-desc">Get +30% Cash</div>
-            </div>
-            <div class="bonus-action">
-                <button class="bonus-btn" onclick="game.watchAd('lucky')">
-                    <span><i class="fa-solid fa-angles-right"></i> <i class="fa-solid fa-gift"></i> WATCH</span>
-                </button>
-            </div>
+    <!-- Sliding Ad Banner (Auto Spawn) -->
+    <div id="sliding-ad-banner" class="sliding-ad-banner">
+        <div class="banner-icon">🎁</div>
+        <div class="banner-text">
+            <span class="banner-title">FREE GIFT!</span>
+            <span class="banner-sub">Click to Claim</span>
         </div>
     </div>
 
@@ -258,49 +267,47 @@
         </div>
 
         <!-- Rebirth Modal -->
-        <div id="rebirth-modal" class="game-modal rebirth-theme hidden">
+        <div id="rebirth-modal" class="game-modal wide-modal rebirth-theme hidden">
             <div class="modal-header">
                 <h2>REBIRTH SYSTEM</h2>
                 <button class="close-modal-btn" data-target="rebirth-modal">×</button>
             </div>
-            <div class="modal-body">
-                <div class="rebirth-info-grid">
-                    <div class="rebirth-column left">
-                        <h3>CURRENT MULTIPLIER</h3>
-                        <div class="stat-row"><span class="current-mult highlight">1x</span></div>
-                    </div>
-                    <div class="rebirth-arrow">➔</div>
-                    <div class="rebirth-column right">
-                        <h3>NEW MULTIPLIER</h3>
-                        <div class="stat-row"><span class="new-mult highlight-green">2x</span></div>
+            <div class="modal-body rebirth-body-landscape">
+                <div class="rebirth-visual-section">
+                    <div class="rebirth-icon-large"><i class="fa-solid fa-infinity"></i></div>
+                    <div class="rebirth-arrows-anim">
+                        <i class="fa-solid fa-angles-up"></i>
                     </div>
                 </div>
                 
-                <div class="rebirth-cost-box">
-                    <span class="rebirth-cost-display">Cost: $1M</span>
-                </div>
-                
-                <div class="rebirth-details">
-                    <div class="detail-box keep">
-                        <h4>YOU KEEP:</h4>
-                        <ul>
-                            <li>✅ Gems & Shop</li>
-                            <li>✅ Achievements</li>
-                            <li>✅ Multiplier Stacks</li>
-                        </ul>
+                <div class="rebirth-content-section">
+                    <div class="rebirth-comparison-box">
+                        <div class="rebirth-stat-col">
+                            <div class="r-label">CURRENT</div>
+                            <div class="r-value current-mult">1x</div>
+                        </div>
+                        <div class="rebirth-arrow-divider">
+                            <i class="fa-solid fa-arrow-right-long"></i>
+                        </div>
+                        <div class="rebirth-stat-col">
+                            <div class="r-label">NEW</div>
+                            <div class="r-value new-mult">2x</div>
+                        </div>
                     </div>
-                    <div class="detail-box lose">
-                        <h4>RESET:</h4>
-                        <ul>
-                            <li>❌ Money & Upgrades</li>
-                            <li>❌ Drones & Evolution</li>
-                        </ul>
+                    
+                    <div class="rebirth-info-text">
+                        <div class="info-pill keep"><i class="fa-solid fa-check"></i> KEEP GEMS & ACHIEVEMENTS</div>
+                        <div class="info-pill lose"><i class="fa-solid fa-xmark"></i> RESET MONEY & UPGRADES</div>
                     </div>
-                </div>
 
-                <button id="confirm-rebirth-btn" class="rebirth-btn-action">
-                    REBIRTH NOW (2X)
-                </button>
+                    <div class="rebirth-cost-box">
+                        <span class="rebirth-cost-display">Cost: $1M</span>
+                    </div>
+
+                    <button id="confirm-rebirth-btn" class="rebirth-btn-action">
+                        REBIRTH NOW (2X)
+                    </button>
+                </div>
             </div>
         </div>
 

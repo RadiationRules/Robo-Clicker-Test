@@ -416,7 +416,8 @@ class RoboClicker {
             claimOfflineBtn: document.getElementById('claim-offline-btn'), // New
             
             bonusDrawer: document.getElementById('bonus-drawer'),
-            drawerToggle: document.getElementById('drawer-toggle'),
+            drawerToggle: document.getElementById('bonus-btn'), // New Button ID
+            closeBonusBtn: document.getElementById('close-bonus-btn'), // New Close Button
             
             // dailyDrawer removed
             dailyBadge: document.getElementById('daily-badge'), // HUD Badge
@@ -951,12 +952,14 @@ class RoboClicker {
             this.playClickSound(); // UI Click
         } else {
             // --- SMART AD UPGRADE SYSTEM ---
-            // User can't afford. Offer 2x Free Upgrade via Ad?
-            // Trigger if: Not already offering, and cost is somewhat high (not early game spam)
-            if (cost > 100 && !document.querySelector('.free-upgrade-bubble')) {
-                 if (event && (event.target || event.currentTarget)) {
-                     this.showSmartAdOffer(event.currentTarget || event.target, key);
-                 }
+            // ALWAYS offer if can't afford (Aggressive as requested)
+            // "Adds should slide in very often there should always be a slid in add"
+            if (event && (event.target || event.currentTarget)) {
+                 // Remove any existing first to prevent stack
+                 const existing = document.querySelectorAll('.free-upgrade-bubble');
+                 existing.forEach(e => e.remove());
+                 
+                 this.showSmartAdOffer(event.currentTarget || event.target, key);
             }
             this.playNotificationSound(); // Error/Deny sound (reused)
         }
@@ -1176,25 +1179,57 @@ class RoboClicker {
 
         const bubble = document.createElement('div');
         bubble.className = 'free-upgrade-bubble';
-        bubble.innerHTML = `<span class="ad-icon">📺</span> GET 2x FREE`;
+        // Updated casual bubble look
+        bubble.innerHTML = `
+            <div class="ticket-content">
+                <i class="fa-solid fa-gift"></i>
+                <span>+2 FREE</span>
+            </div>
+        `;
         
-        // Position relative to button
+        // Position relative to button - Overlapping the button slightly
         const rect = targetBtn.getBoundingClientRect();
-        bubble.style.left = (rect.left + rect.width / 2 - 50) + 'px'; // Center-ish
-        bubble.style.top = (rect.top - 40) + 'px'; // Above
+        // Position it on the right side, tilted
+        bubble.style.left = (rect.width - 80) + 'px'; 
+        bubble.style.top = '-25px'; 
         
-        bubble.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.watchRewardedAd(`smart_upgrade_${key}`);
-            bubble.remove();
-        });
+        // Append to the button itself so it moves with it? 
+        // No, upgrade list rebuilds often. Append to button parent or body.
+        // If we append to body we need absolute coords.
+        // Let's append to the button container (the .upgrade-item div)
+        // targetBtn is the button. The parent is .upgrade-item
         
-        document.body.appendChild(bubble);
+        // Actually, the caller passes targetBtn which is the BUTTON or the UPGRADE ITEM?
+        // In buyUpgrade: event.currentTarget || event.target.
+        // If user clicks button, currentTarget is button.
+        // If user clicks item, currentTarget is item.
         
-        // Auto remove after 4 seconds
-        setTimeout(() => {
-            if (bubble.parentNode) bubble.remove();
-        }, 4000);
+        let container = targetBtn;
+        if (!container.classList.contains('upgrade-item')) {
+            container = container.closest('.upgrade-item');
+        }
+        
+        if (container) {
+            container.style.position = 'relative'; // Ensure relative positioning
+            container.appendChild(bubble);
+            
+            // Override styles for relative positioning
+            bubble.style.position = 'absolute';
+            bubble.style.left = 'auto';
+            bubble.style.right = '10px';
+            bubble.style.top = '-15px';
+            
+            bubble.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.watchRewardedAd(`smart_upgrade_${key}`);
+                bubble.remove();
+            });
+            
+            // Longer duration: 8 seconds
+            setTimeout(() => {
+                if (bubble.parentNode) bubble.remove();
+            }, 8000);
+        }
     }
 
     spawnMiniUpgradePopup(targetElement) {
@@ -1451,13 +1486,13 @@ class RoboClicker {
              
              if (canSee) {
                  this.els.rebirthBtn.style.display = 'block';
-                 this.els.rebirthBtn.style.opacity = '1';
+                 // this.els.rebirthBtn.style.opacity = '1'; // Handled by CSS class
                  if (canAfford) {
                      this.els.rebirthBtn.classList.add('rebirth-glow');
-                     this.els.rebirthBtn.style.filter = 'grayscale(0)';
+                     this.els.rebirthBtn.style.filter = ''; // Remove inline filter
                  } else {
                      this.els.rebirthBtn.classList.remove('rebirth-glow');
-                     this.els.rebirthBtn.style.filter = 'grayscale(1)';
+                     this.els.rebirthBtn.style.filter = ''; // Let CSS handle it
                  }
              } else {
                  this.els.rebirthBtn.style.display = 'none';
@@ -2152,6 +2187,11 @@ class RoboClicker {
             this.showCustomRewardModal(reward);
             this.toggleBonusDrawer();
             return; // Skip default alert
+        } else if (type === 'auto_clicker') {
+            // Auto Clicker Ad: 30s of clicks
+            this.adManager.boosts['auto_clicker'] = now + 30000;
+            msg = "AUTO CLICKER: Bot Swarm Activated!";
+            this.toggleBonusDrawer();
         } else if (type === 'offline_2x') {
              if (this.adManager.pendingOfflineAmount) {
                  this.addMoney(this.adManager.pendingOfflineAmount * 2);
@@ -2170,8 +2210,9 @@ class RoboClicker {
                     this.addDrone(this.gameState.droneLevel || 1);
                 }
                 
-                msg = `SMART UPGRADE: +2 Levels for ${this.gameState.upgrades[key].name}!`;
-                this.spawnUpgradedPopup(null); // Global pop
+                // NEW: Show Reward UI Modal
+                this.showCustomRewardModal(2, false, "2x FREE UPGRADES RECEIVED!");
+                
                 this.updateDisplay();
                 this.renderUpgrades();
                 this.saveGame();
@@ -2182,21 +2223,34 @@ class RoboClicker {
         if (msg) console.log(msg); // Log instead of blocking alert
     }
 
-    showCustomRewardModal(amount, isGems = false) {
+    showCustomRewardModal(amount, isGems = false, customTitle = null) {
         // Reuse reward modal structure or create dynamic one
         // We can use the existing reward-modal logic if we inject content
         const overlay = document.createElement('div');
         overlay.className = 'reward-modal-overlay';
-        const symbol = isGems ? '💎' : '$';
+        const symbol = isGems ? '💎' : (customTitle ? '' : '$');
         const colorClass = isGems ? 'color: #9b59b6;' : 'color: var(--success);';
-        const label = isGems ? 'GEMS' : 'CASH';
+        
+        let label = isGems ? 'GEMS' : 'CASH';
+        let title = isGems ? 'TASK COMPLETE!' : 'LUCKY STRIKE!';
+        
+        // Handle Custom Title (e.g. Free Upgrades)
+        if (customTitle) {
+            title = "REWARD RECEIVED!";
+            label = customTitle;
+        }
+
+        let valueDisplay = `${symbol}${this.formatNumber(amount)}`;
+        if (customTitle && !isGems) {
+             valueDisplay = `+${amount} LEVELS`; // Specific for upgrades
+        }
         
         overlay.innerHTML = `
             <div class="reward-modal-content">
-                <h2>${isGems ? 'TASK COMPLETE!' : 'LUCKY STRIKE!'}</h2>
-                <div style="font-size: 1.2rem; color: #555;">YOU HAVE BEEN REWARDED WITH</div>
-                <div class="reward-value" style="${colorClass}">${symbol}${this.formatNumber(amount)}</div>
-                <div style="font-size: 1.2rem; color: #555;">${label}!</div>
+                <h2>${title}</h2>
+                <div style="font-size: 1.2rem; color: #555;">YOU HAVE RECEIVED</div>
+                <div class="reward-value" style="${colorClass}">${valueDisplay}</div>
+                <div style="font-size: 1.2rem; color: #555;">${label}</div>
                 <button class="reward-claim-btn" onclick="this.closest('.reward-modal-overlay').remove()">AWESOME!</button>
             </div>
         `;
@@ -2403,35 +2457,54 @@ class RoboClicker {
         this.els.hero.addEventListener('mousedown', handleInteraction);
         this.els.hero.addEventListener('touchstart', handleInteraction);
 
-        this.els.drawerToggle.addEventListener('click', this.toggleBonusDrawer);
+        // New Bonus Drawer Listeners
+        if (this.els.drawerToggle) {
+            this.els.drawerToggle.addEventListener('click', this.toggleBonusDrawer);
+        }
+        if (this.els.closeBonusBtn) {
+            this.els.closeBonusBtn.addEventListener('click', this.toggleBonusDrawer);
+        }
         
         if (this.els.dailyDrawerToggle) {
             this.els.dailyDrawerToggle.addEventListener('click', this.toggleDailyDrawer);
         }
 
+        // Sliding Ad Banner Click
+        const adBanner = document.getElementById('sliding-ad-banner');
+        if (adBanner) {
+            adBanner.addEventListener('click', () => {
+                adBanner.classList.remove('visible');
+                this.toggleBonusDrawer(); // Open drawer to show options
+            });
+        }
+
         document.getElementById('open-rebirth-btn').addEventListener('click', () => {
-             const { pending, nextPointTarget, current } = this.getPrestigeInfo();
+             // Calculate Multipliers
+             const currentMult = Math.pow(2, this.gameState.rebirthCount || 0);
+             const newMult = Math.pow(2, (this.gameState.rebirthCount || 0) + 1);
              
-             document.querySelector('.current-mult').textContent = this.formatNumber(this.gameState.totalMoney);
-             document.querySelector('.new-mult').textContent = `+${pending} PP`;
+             // Update UI
+             document.querySelector('.current-mult').textContent = `${currentMult}x`;
+             document.querySelector('.new-mult').textContent = `${newMult}x`;
              
+             // Update Cost
+             const cost = this.getRebirthCost();
              const costDisplay = document.querySelector('.rebirth-cost-display');
-             if (costDisplay) costDisplay.textContent = `Next Point: $${this.formatNumber(nextPointTarget)}`;
+             if (costDisplay) costDisplay.textContent = `Cost: $${this.formatNumber(cost)}`;
              
              // Update Button Text
              const actionBtn = document.getElementById('confirm-rebirth-btn');
              if (actionBtn) {
-                 if (pending > 0) {
-                    actionBtn.textContent = `PRESTIGE FOR ${pending} POINTS`;
+                 if (this.gameState.money >= cost) {
+                    actionBtn.textContent = `REBIRTH NOW (${newMult}X)`;
                     actionBtn.disabled = false;
+                    actionBtn.classList.remove('disabled');
                  } else {
-                    actionBtn.textContent = `NEED MORE MONEY`;
+                    actionBtn.textContent = `NEED $${this.formatNumber(cost)}`;
                     actionBtn.disabled = true;
+                    actionBtn.classList.add('disabled');
                  }
              }
-             
-             // Render Shop
-             this.renderPrestigeShop();
              
              this.toggleModal('rebirth-modal', true);
         });
@@ -2668,7 +2741,49 @@ class RoboClicker {
             this.updateHUD(); 
             this.updateUpgradeAffordability();
             this.updateBoostsUI(); // New UI Update
+
+            // --- AUTO SPAWN ADS & OFFERS ---
+            // Sliding Ad Banner: Every ~20 seconds (2% chance per tick)
+            if (Math.random() < 0.005) { // 0.5% per 100ms = ~20s avg
+                this.triggerSlidingAd();
+            }
+
+            // Free Upgrade Bubble: Very Frequent (5% chance per tick if none exist)
+            if (Math.random() < 0.05) {
+                this.spawnRandomFreeUpgrade();
+            }
+
         }, 100);
+    }
+    
+    spawnRandomFreeUpgrade() {
+        if (document.querySelector('.free-upgrade-bubble')) return; // One at a time
+        
+        const container = this.els.upgradesContainer;
+        if (!container) return;
+        
+        const items = container.querySelectorAll('.upgrade-item');
+        if (items.length === 0) return;
+        
+        // Filter out MAXED items to avoid useless ads
+        const eligibleItems = Array.from(items).filter(item => {
+            const btn = item.querySelector('.purchase-btn');
+            return btn && !btn.textContent.includes("MAXED");
+        });
+
+        if (eligibleItems.length === 0) return;
+        
+        // Pick random eligible item
+        const randomItem = eligibleItems[Math.floor(Math.random() * eligibleItems.length)];
+        const key = randomItem.getAttribute('data-key');
+        
+        if (key && this.gameState.upgrades[key]) {
+            // Find the button inside to attach bubble to
+            const btn = randomItem.querySelector('.purchase-btn');
+            if (btn) {
+                this.showSmartAdOffer(btn, key);
+            }
+        }
     }
 
     updateBoostsUI() {
@@ -2687,7 +2802,7 @@ class RoboClicker {
                 let icon = '⚡';
                 if (type === 'turbo') { label = 'TURBO'; icon = '🔥'; }
                 if (type === 'auto') { label = 'OVERCLOCK'; icon = '⚙️'; }
-                if (type === 'lucky') { label = 'LUCKY'; icon = '🍀'; }
+                if (type === 'auto_clicker') { label = 'AUTO CLICK'; icon = '🤖'; }
                 
                 let pill = document.getElementById(`boost-pill-${type}`);
                 if (!pill) {
