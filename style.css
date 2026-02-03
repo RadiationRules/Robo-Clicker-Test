@@ -454,17 +454,17 @@ body {
     100% { transform: translate(0, -50%) rotate(0deg); }
 }
 
-/* Make the bulb go crazy too */
+/* Make the bulb just glow, no flashing */
 .heat-system.energy-surge .heat-bulb {
     background: white;
     box-shadow: 0 0 30px white;
-    animation: flashBulb 0.1s infinite;
+    /* animation: flashBulb 0.1s infinite; REMOVED per request */
+    animation: glowBulb 2s infinite alternate;
 }
 
-@keyframes flashBulb {
-    0% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.2); }
-    100% { opacity: 0.8; transform: scale(1); }
+@keyframes glowBulb {
+    from { opacity: 0.8; transform: scale(1); box-shadow: 0 0 20px white; }
+    to { opacity: 1; transform: scale(1.1); box-shadow: 0 0 40px white; }
 }
 
 /* Notification Badge Pulse */
@@ -1677,14 +1677,14 @@ body {
 
 .heat-multiplier-text.active {
     opacity: 1;
-    animation: buzzText 0.1s infinite; /* Buzz effect */
+    animation: buzzText 0.05s infinite; /* Faster Buzz effect */
 }
 
 @keyframes buzzText {
     0% { transform: translateX(-50%) scale(1) rotate(0deg); }
-    25% { transform: translateX(-52%) scale(1.1) rotate(-3deg); }
-    50% { transform: translateX(-50%) scale(1.2) rotate(0deg); }
-    75% { transform: translateX(-48%) scale(1.1) rotate(3deg); }
+    25% { transform: translateX(calc(-50% - 2px)) scale(1.1) rotate(-5deg); }
+    50% { transform: translateX(calc(-50% + 2px)) scale(1.2) rotate(0deg); }
+    75% { transform: translateX(calc(-50% - 1px)) scale(1.1) rotate(5deg); }
     100% { transform: translateX(-50%) scale(1) rotate(0deg); }
 }
 
@@ -3482,26 +3482,7 @@ body {
     .upgrade-icon-box { width: 50px; height: 50px; font-size: 1.5rem; }
 }
 
-/* NEW DAILY DRAWER STYLES */
-.daily-drawer-style {
-    width: 600px; /* Landscape width */
-    max-width: 90vw; /* Responsive */
-    padding: 0;
-    overflow: visible;
-}
-
-.daily-handle {
-    top: calc(50% + 100px); /* Positioned BELOW bonus handle */
-    background: #0984e3; /* Blue Handle */
-}
-
-.daily-drawer-content {
-    padding: 20px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
+/* NEW DAILY DRAWER STYLES REMOVED (Moved to Modal) */
 
 /* Override card styles for daily drawer if needed */
 .day-card-infinite {

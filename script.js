@@ -92,7 +92,7 @@ const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
-    'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone! (5x Money, 3x Speed)", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
+    'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
 
 class RoboClicker {
@@ -138,11 +138,9 @@ class RoboClicker {
             // Upgrades with descriptions - EXCLUSIVE & FUN
             upgrades: {
                 'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
-                'auto_bot': { level: 0, baseCost: 150, basePower: 2, name: "Micro-Bot Swarm", desc: "Auto-clicks for you (Basic)", type: "auto" },
-                'lucky_strike': { level: 0, baseCost: 750, basePower: 0.5, name: "Jackpot Chip", desc: "+50% Critical Hit Damage (Addictive!)", type: "crit_damage" },
                 'add_drone': { level: 0, baseCost: 500, basePower: 1, name: "Deploy Drone", desc: "Deploys a Drone (Max 5)", type: "action_add_drone" },
                 'upgrade_drone': { level: 0, baseCost: 1000, basePower: 1, name: "Upgrade Drone", desc: "Drones Gain More Power", type: "action_upgrade_drone" },
-                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Money", desc: "Better 2X Critical Chance", type: "effect_crit" },
+                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Chance", desc: "Better Critical Chance", type: "effect_crit" },
             },
             
             // Gem Shop State
@@ -411,19 +409,17 @@ class RoboClicker {
             offlineModal: document.getElementById('offline-modal'), // New
             indexModal: document.getElementById('index-modal'),
             confirmModal: document.getElementById('confirm-modal'), // New
-            leaderboardOverlay: document.getElementById('leaderboard-overlay'),
             
             rebirthBtn: document.getElementById('open-rebirth-btn'),
-            leaderboardScores: document.getElementById('leaderboard-scores'),
+            dailyRewardBtn: document.getElementById('daily-reward-btn'), // HUD Button
             
             claimOfflineBtn: document.getElementById('claim-offline-btn'), // New
             
             bonusDrawer: document.getElementById('bonus-drawer'),
             drawerToggle: document.getElementById('drawer-toggle'),
             
-            dailyDrawer: document.getElementById('daily-drawer'),
-            dailyDrawerToggle: document.getElementById('daily-drawer-toggle'),
-            dailyBadgeDrawer: document.getElementById('daily-badge-drawer'),
+            // dailyDrawer removed
+            dailyBadge: document.getElementById('daily-badge'), // HUD Badge
             
             dailyGrid: document.getElementById('daily-streak-grid'),
             claimDailyBtn: document.getElementById('claim-daily-btn'),
@@ -719,13 +715,8 @@ class RoboClicker {
         amount *= heatMult;
 
         if (isCrit) {
-            // Apply Critical Damage Multiplier (Base 2x + Upgrades)
-            let critMult = 2;
-            const jackpotUpgrade = this.gameState.upgrades['lucky_strike'];
-            if (jackpotUpgrade) {
-                critMult += (jackpotUpgrade.level * jackpotUpgrade.basePower);
-            }
-            amount *= critMult;
+            // Apply Critical Damage Multiplier (Base 2x)
+            amount *= 2;
         }
 
         // Midas Chip Logic (Legacy check, kept safe)
@@ -744,7 +735,7 @@ class RoboClicker {
         if (!isAuto) {
             this.gameState.totalBotsDeployed++;
             // Add XP per click
-            let xpGain = 0.5;
+            let xpGain = 2; // Was 1, made easier
 
             // Gem Shop Evo Boost
             if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['perm_evo_speed']) {
@@ -1266,31 +1257,17 @@ class RoboClicker {
         return Math.max(1, cost);
     }
 
-    getPrestigeInfo() {
-        // Formula: Improved for better pacing
-        // Was: Sqrt(TotalMoney / 1,000,000) -> Too slow
-        // New: Sqrt(TotalMoney / 25,000) -> Much faster start
-        // $25k = 1 Point
-        // $100k = 2 Points
-        // $1M = 6 Points
-        // $100M = 63 Points
-        const totalLifetime = this.gameState.totalMoney;
-        const divisor = 25000;
-        const potentialTotalPoints = Math.floor(Math.sqrt(totalLifetime / divisor));
-        
-        const claimed = this.gameState.prestige.claimedPoints || 0;
-        const pending = Math.max(0, potentialTotalPoints - claimed);
-        
-        // Next point target
-        // Inverse of Sqrt(X / Divisor) = Y  =>  X = Y^2 * Divisor
-        const nextPointTarget = Math.pow((claimed + pending + 1), 2) * divisor;
-        
-        return { pending, nextPointTarget, current: this.gameState.prestige.points };
+    getRebirthCost() {
+        // Base Cost: 1M
+        // Scales 5x each time: 1M, 5M, 25M, 125M...
+        const base = 1000000;
+        const count = this.gameState.rebirthCount || 0;
+        return base * Math.pow(5, count);
     }
 
-    prestige() {
-        const { pending } = this.getPrestigeInfo();
-        if (pending <= 0) return;
+    rebirth() {
+        const cost = this.getRebirthCost();
+        if (this.gameState.money < cost) return;
 
         // 1. Close Modal
         this.toggleModal('rebirth-modal', false);
@@ -1300,9 +1277,15 @@ class RoboClicker {
         const multDisplay = document.getElementById('rebirth-mult-display');
         
         // Visual Update
-        if (multDisplay) multDisplay.textContent = `+${this.formatNumber(pending)} PP`;
-        document.querySelector('.rebirth-title-anim').textContent = "PRESTIGE!";
-        document.querySelector('.rebirth-sub-anim').textContent = "SYSTEM REBOOTED";
+        // Calculate new multiplier: 2^(count+1)
+        const newMult = Math.pow(2, (this.gameState.rebirthCount || 0) + 1);
+        if (multDisplay) multDisplay.textContent = `${newMult}X`;
+        
+        const titleAnim = document.querySelector('.rebirth-title-anim');
+        if (titleAnim) titleAnim.textContent = "REBIRTH!";
+        
+        const subAnim = document.querySelector('.rebirth-sub-anim');
+        if (subAnim) subAnim.textContent = "SYSTEM UPGRADED";
         
         if (overlay) {
             overlay.classList.add('active');
@@ -1310,22 +1293,21 @@ class RoboClicker {
             this.playNotificationSound();
             
             setTimeout(() => {
-                this.performPrestigeReset(pending);
+                this.performRebirthReset();
                 overlay.classList.remove('active');
             }, 4000);
         } else {
-            this.performPrestigeReset(pending);
+            this.performRebirthReset();
         }
     }
 
-    performPrestigeReset(pendingPoints) {
-        // Add Points
-        this.gameState.prestige.points += pendingPoints;
-        this.gameState.prestige.claimedPoints = (this.gameState.prestige.claimedPoints || 0) + pendingPoints;
-        this.gameState.prestige.totalResetCount++;
+    performRebirthReset() {
+        // Increment Rebirth Count
+        this.gameState.rebirthCount = (this.gameState.rebirthCount || 0) + 1;
+        this.gameState.rebirthMultiplier = Math.pow(2, this.gameState.rebirthCount);
 
         // RESET GAME STATE
-        // NOTE: totalMoney (Lifetime) is PRESERVED. Do not reset it.
+        // Reset Money (Keep Gems)
         this.gameState.money = 0;
         this.gameState.clickPower = 1;
         this.gameState.autoClickPower = 0;
@@ -1339,7 +1321,7 @@ class RoboClicker {
         this.gameState.drones = [];
         this.gameState.droneLevel = 1;
         
-        // Reset Evolution (Optional? Let's reset for replayability)
+        // Reset Evolution
         this.gameState.evolution.stage = 0;
         this.gameState.evolution.xp = 0;
         this.gameState.evolution.maxXp = 25;
@@ -1353,81 +1335,6 @@ class RoboClicker {
         this.renderUpgrades();
         this.renderFlyingDrones();
         this.applyRobotVisuals();
-        
-        // Render Prestige Shop (if open)
-        this.renderPrestigeShop();
-    }
-
-    // --- PRESTIGE SHOP ---
-    getPrestigeShopItems() {
-        return {
-            // Improved Scaling (Cheaper upgrades)
-            'pp_mult': { name: "Synergy Core", desc: "+50% Money Multiplier", baseCost: 1, costScale: 1.3, max: 50, type: 'mult' },
-            'pp_start': { name: "Starter Kit", desc: "Start with +$5,000", baseCost: 2, costScale: 1.5, max: 10, type: 'start_cash' },
-            'pp_xp': { name: "Neural Link", desc: "+20% XP Gain", baseCost: 3, costScale: 1.2, max: 20, type: 'xp' },
-            'pp_luck': { name: "Fortune Chip", desc: "+5% Crit Chance", baseCost: 5, costScale: 1.3, max: 10, type: 'luck' }
-        };
-    }
-    
-    renderPrestigeShop() {
-        const container = document.getElementById('prestige-shop-grid');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        const items = this.getPrestigeShopItems();
-        
-        for (const [key, item] of Object.entries(items)) {
-            const currentLevel = (this.gameState.prestige.upgrades[key] || 0);
-            const cost = Math.floor(item.baseCost * Math.pow(item.costScale, currentLevel));
-            const isMax = currentLevel >= item.max;
-            
-            const canAfford = this.gameState.prestige.points >= cost && !isMax;
-            
-            const div = document.createElement('div');
-            div.className = `prestige-item ${canAfford ? 'can-afford' : ''} ${isMax ? 'maxed' : ''}`;
-            
-            div.innerHTML = `
-                <div class="p-item-header">
-                    <span class="p-name">${item.name}</span>
-                    <span class="p-lvl">Lvl ${currentLevel}/${item.max}</span>
-                </div>
-                <div class="p-desc">${item.desc}</div>
-                <button class="p-buy-btn" ${!canAfford ? 'disabled' : ''}>
-                    ${isMax ? 'MAX' : `${cost} PP`}
-                </button>
-            `;
-            
-            if (canAfford) {
-                div.querySelector('button').addEventListener('click', () => this.buyPrestigeUpgrade(key, cost));
-            }
-            
-            container.appendChild(div);
-        }
-        
-        // Update Points Display
-        const pointsDisplay = document.getElementById('prestige-points-display');
-        if (pointsDisplay) pointsDisplay.textContent = this.formatNumber(this.gameState.prestige.points);
-    }
-    
-    buyPrestigeUpgrade(key, cost) {
-        if (this.gameState.prestige.points >= cost) {
-            this.gameState.prestige.points -= cost;
-            this.gameState.prestige.upgrades[key] = (this.gameState.prestige.upgrades[key] || 0) + 1;
-            
-            this.playNotificationSound();
-            this.saveGame();
-            this.renderPrestigeShop();
-            this.updateDisplay(); // Apply effects immediately if needed
-        }
-    }
-
-    getRebirthCost() {
-        // Legacy Rebirth Code - Kept to prevent crash if called, but redirecting UI to Prestige
-        return 999999999999; 
-    }
-
-    rebirth() {
-       this.prestige(); // Redirect
     }
 
 
@@ -1534,19 +1441,23 @@ class RoboClicker {
         
         // PRESTIGE BUTTON UPDATE
         if (this.els.rebirthBtn) {
-             const { pending } = this.getPrestigeInfo();
-             this.els.rebirthBtn.innerHTML = `<i class="fa-solid fa-crown"></i> PRESTIGE ${pending > 0 ? `(+${pending})` : ''}`;
+             const cost = this.getRebirthCost();
+             const canAfford = this.gameState.money >= cost;
              
-             // Unlock at 1M lifetime or if already prestiged
-             const canPrestige = this.gameState.totalMoney >= 1000000 || (this.gameState.prestige && this.gameState.prestige.totalResetCount > 0);
+             this.els.rebirthBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> REBIRTH <span class="rebirth-cost">$${this.formatNumber(cost)}</span>`;
              
-             if (canPrestige) {
+             // Unlock at 1M lifetime or if already rebirthed
+             const canSee = this.gameState.totalMoney >= 1000000 || this.gameState.rebirthCount > 0;
+             
+             if (canSee) {
                  this.els.rebirthBtn.style.display = 'block';
                  this.els.rebirthBtn.style.opacity = '1';
-                 if (pending > 0) {
+                 if (canAfford) {
                      this.els.rebirthBtn.classList.add('rebirth-glow');
+                     this.els.rebirthBtn.style.filter = 'grayscale(0)';
                  } else {
                      this.els.rebirthBtn.classList.remove('rebirth-glow');
+                     this.els.rebirthBtn.style.filter = 'grayscale(1)';
                  }
              } else {
                  this.els.rebirthBtn.style.display = 'none';
@@ -1722,7 +1633,8 @@ class RoboClicker {
         // Logic
         this.gameState.evolution.stage = nextStage;
         this.gameState.evolution.xp = 0;
-        this.gameState.evolution.maxXp = Math.floor(this.gameState.evolution.maxXp * 1.5); // Scale XP req
+        // Made easier: Scaling reduced from 1.5 to 1.35
+        this.gameState.evolution.maxXp = Math.floor(this.gameState.evolution.maxXp * 1.35); 
         
         // Unlock
         if (!this.gameState.unlockedRobots.includes(nextStage)) {
@@ -1776,8 +1688,6 @@ class RoboClicker {
         // --- UPDATED ICONS (FontAwesome) ---
         const icons = {
             'Click Value': '<i class="fa-solid fa-arrow-pointer"></i>',
-            'auto_bot': '<i class="fa-solid fa-robot"></i>',
-            'lucky_strike': '<i class="fa-solid fa-clover"></i>',
             'add_drone': '<i class="fa-solid fa-helicopter"></i>', // Drone Icon
             'upgrade_drone': '<i class="fa-solid fa-bolt"></i>', // Power Icon
             'crit_money': '<i class="fa-solid fa-crosshairs"></i>',
@@ -2121,7 +2031,8 @@ class RoboClicker {
     }
     
     toggleDailyDrawer() {
-        this.els.dailyDrawer.classList.toggle('open');
+        // Legacy function, replaced by modal
+        this.toggleModal('daily-rewards-modal', true);
     }
 
     watchRewardedAd(type, callbacks = {}) {
@@ -2349,12 +2260,14 @@ class RoboClicker {
         const productionPerSec = this.getAutoPower() + (this.getClickPower() * 2); // Assume 2 clicks/sec avg
         const playerPower = Math.max(100, productionPerSec * 60);
         
-        this.els.dailyGrid.innerHTML = '';
-        this.els.dailyGrid.className = 'daily-scroll-container'; // Update class for new CSS
+        if (this.els.dailyGrid) {
+            this.els.dailyGrid.innerHTML = '';
+            // this.els.dailyGrid.className = 'daily-scroll-container'; // Class already set in HTML
+        }
 
         // Show a window of days: previous 1, current, next 5 (More "infinite" feel)
         const startDay = currentStreak; 
-        const numToShow = 7; // Increased to show more future
+        const numToShow = 5; 
 
         for (let i = 0; i < numToShow; i++) {
             const dayIndex = startDay + i;
@@ -2379,31 +2292,35 @@ class RoboClicker {
                 <div class="day-icon-large">${icon}</div>
                 <div class="day-reward-text">${label}</div>
             `;
-            this.els.dailyGrid.appendChild(el);
+            if (this.els.dailyGrid) this.els.dailyGrid.appendChild(el);
         }
 
         if (timeSince > oneDay) {
-            this.els.claimDailyBtn.disabled = false;
-            this.els.claimDailyBtn.textContent = "CLAIM REWARD";
-            this.els.dailyTimer.classList.add('hidden');
+            if (this.els.claimDailyBtn) {
+                this.els.claimDailyBtn.disabled = false;
+                this.els.claimDailyBtn.textContent = "CLAIM REWARD";
+            }
+            if (this.els.dailyTimer) this.els.dailyTimer.classList.add('hidden');
             
             // Only auto-open if requested
             if (autoOpen) {
-                this.toggleDailyDrawer();
+                this.toggleModal('daily-rewards-modal', true);
             }
             
             // ALWAYS show notification badge if ready
-            const badge = document.getElementById('daily-badge');
-            if (badge) badge.classList.remove('hidden');
+            if (this.els.dailyBadge) this.els.dailyBadge.classList.remove('hidden');
+            if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.add('pulse-btn');
             
         } else {
-            this.els.claimDailyBtn.disabled = true;
-            this.els.dailyTimer.classList.remove('hidden');
-            this.updateDailyTimer();
+            if (this.els.claimDailyBtn) this.els.claimDailyBtn.disabled = true;
+            if (this.els.dailyTimer) {
+                this.els.dailyTimer.classList.remove('hidden');
+                this.updateDailyTimer();
+            }
             
             // Hide badge if not ready
-            const badge = document.getElementById('daily-badge');
-            if (badge) badge.classList.add('hidden');
+            if (this.els.dailyBadge) this.els.dailyBadge.classList.add('hidden');
+            if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.remove('pulse-btn');
         }
     }
 
@@ -2523,23 +2440,15 @@ class RoboClicker {
         document.querySelectorAll('.close-modal-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-target');
-                
-                // If it's the leaderboard overlay (custom dropdown)
-                if (targetId === 'leaderboard-overlay') {
-                    document.getElementById(targetId).classList.remove('active');
-                } 
-                // Standard Modals
-                else {
-                    this.toggleModal(null, false);
-                }
+                this.toggleModal(null, false);
             });
         });
 
         document.getElementById('confirm-rebirth-btn').addEventListener('click', () => this.rebirth());
         
         document.getElementById('daily-reward-btn').addEventListener('click', () => {
-            this.checkDailyReward();
-            this.toggleDailyDrawer(); // Use Drawer instead of Modal
+            this.checkDailyReward(false); // Update UI
+            this.toggleModal('daily-rewards-modal', true);
         });
         this.els.claimDailyBtn.addEventListener('click', () => this.claimDaily());
         
@@ -2619,18 +2528,6 @@ class RoboClicker {
              this.toggleModal('index-modal', true);
         });
 
-        // Toggle Leaderboard Modal
-        document.getElementById('leaderboard-btn').addEventListener('click', () => {
-             const dropdown = this.els.leaderboardOverlay;
-             // Close others
-             this.toggleModal(null, false);
-             
-             dropdown.classList.toggle('active');
-             if (dropdown.classList.contains('active')) {
-                 this.fetchLeaderboard();
-             }
-        });
-
         // Offline Modal Events
         document.getElementById('claim-offline-btn').addEventListener('click', () => {
              if (this.adManager.pendingOfflineAmount) {
@@ -2643,67 +2540,6 @@ class RoboClicker {
         document.getElementById('claim-offline-2x-btn').addEventListener('click', () => {
              this.watchRewardedAd('offline_2x');
         });
-    }
-
-    async fetchLeaderboard() {
-         const container = this.els.leaderboardScores;
-         container.innerHTML = '<div style="padding:20px; text-align:center;">Connecting to Global Network...</div>';
-         
-         // Simulate network delay
-         setTimeout(() => {
-             container.innerHTML = '';
-             
-             // Real User Name from SDK or Fallback
-             let playerName = "You";
-             if (window.CrazyGames && window.CrazyGames.SDK) {
-                 // In a real implementation, you'd fetch the user's name here
-                 // playerName = await window.CrazyGames.SDK.user.getUser(); 
-             }
-
-             // Generate realistic "Top Players" (No botted names)
-             const mockData = [
-                 { rank: 1, name: "CyberKing99", score: 5000000 },
-                 { rank: 2, name: "RoboMaster", score: 2500000 },
-                 { rank: 3, name: "ClickElite", score: 1000000 },
-                 { rank: 4, name: "TechNinja", score: 750000 },
-                 { rank: 5, name: "GearHead", score: 500000 },
-                 { rank: 6, name: "CircuitBreaker", score: 250000 },
-                 { rank: 7, name: "NeonPulse", score: 100000 },
-                 { rank: 999, name: playerName, score: this.gameState.totalBotsDeployed }
-             ];
-             
-             // Sort to ensure player is placed correctly if high score
-             mockData.sort((a, b) => b.score - a.score);
-             
-             // Re-assign ranks based on sort
-             mockData.forEach((p, i) => p.rank = i + 1);
-
-             mockData.forEach(p => {
-                 const row = document.createElement('div');
-                 
-                 // Special styling for Top 3
-                 let rankClass = 'rank-other';
-                 let trophyIcon = '';
-                 
-                 if (p.rank === 1) { rankClass = 'rank-1-gold'; trophyIcon = '🥇'; }
-                 else if (p.rank === 2) { rankClass = 'rank-2-silver'; trophyIcon = '🥈'; }
-                 else if (p.rank === 3) { rankClass = 'rank-3-bronze'; trophyIcon = '🥉'; }
-                 
-                 row.className = `score-row ${rankClass}`;
-                 
-                 // Highlight the player
-                 if (p.name === playerName) row.classList.add('is-player');
-
-                 row.innerHTML = `
-                    <div class="score-left">
-                        <span class="rank-badge">${trophyIcon || '#' + p.rank}</span>
-                        <span class="player-name">${p.name}</span>
-                    </div>
-                    <span class="score-val">${this.formatNumber(p.score)}</span>
-                 `;
-                 container.appendChild(row);
-             });
-         }, 500);
     }
 
     show5xMultiplier() {
@@ -2916,6 +2752,14 @@ class RoboClicker {
                             const saved = this.gameState.upgrades[key];
                             const def = defaultUpgrades[key];
                             this.gameState.upgrades[key] = { ...def, level: saved.level || 0 };
+                        }
+                    }
+                    
+                    // Cleanup removed upgrades (Strict Mode)
+                    const allowedKeys = Object.keys(defaultUpgrades);
+                    for (const key in this.gameState.upgrades) {
+                        if (!allowedKeys.includes(key)) {
+                            delete this.gameState.upgrades[key];
                         }
                     }
                     

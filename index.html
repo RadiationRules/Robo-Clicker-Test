@@ -64,14 +64,11 @@
             </div>
 
             <div class="hud-controls">
-                <button id="leaderboard-btn" class="icon-btn" title="Leaderboard">
-                    <i class="fa-solid fa-trophy"></i>
-                </button>
                 <button id="index-btn" class="icon-btn" title="Robot Index">
                     <i class="fa-solid fa-book-open"></i>
                     <div id="index-badge" class="notification-badge hidden">!</div>
                 </button>
-                <button id="daily-reward-btn" class="icon-btn hidden" title="Daily Rewards">
+                <button id="daily-reward-btn" class="icon-btn" title="Daily Rewards">
                     <i class="fa-solid fa-calendar-check"></i>
                     <div id="daily-badge" class="notification-badge hidden">!</div>
                 </button>
@@ -236,62 +233,51 @@
         </div>
     </div>
 
-    <!-- Daily Rewards Drawer (New) -->
-    <div id="daily-drawer" class="bonus-drawer daily-drawer-style">
-        <div id="daily-drawer-toggle" class="drawer-handle daily-handle">
-            <i class="fa-solid fa-calendar-check" style="font-size: 1.5rem;"></i>
-            <div id="daily-badge-drawer" class="notification-badge hidden">!</div>
-        </div>
-        
-        <h2 class="drawer-title">DAILY LOGIN</h2>
-        
-        <div class="daily-drawer-content">
-             <div id="daily-streak-grid" class="daily-scroll-container">
-                <!-- Injected -->
-            </div>
-            
-            <div class="daily-status">
-                <div id="daily-timer" class="hidden" style="font-size: 1.2rem; color: #555; margin-bottom: 10px;">
-                    Next reward in: 12h 30m
-                </div>
-                <button id="claim-daily-btn" class="action-btn" disabled>
-                    CLAIM REWARD
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Daily Rewards Drawer Removed (Moved to Modal) -->
 
     <!-- Modals -->
     <div id="modal-overlay" class="modal-overlay hidden">
         
+        <!-- Daily Rewards Modal (New Landscape UI) -->
+        <div id="daily-rewards-modal" class="game-modal wide-modal hidden">
+            <div class="modal-header">
+                <h2>DAILY REWARDS</h2>
+                <button class="close-modal-btn" data-target="daily-rewards-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="daily-status">
+                    <div id="daily-timer" class="hidden" style="font-size: 1.2rem; color: #777; margin-bottom: 10px; font-weight: bold;">Next Reward in: --h --m</div>
+                </div>
+                <div id="daily-streak-grid" class="daily-scroll-container">
+                    <!-- Injected Items -->
+                </div>
+                <button id="claim-daily-btn" class="action-btn" style="width: 100%; margin-top: 20px;" disabled>
+                    CLAIM REWARD
+                </button>
+            </div>
+        </div>
+
         <!-- Rebirth Modal -->
         <div id="rebirth-modal" class="game-modal rebirth-theme hidden">
             <div class="modal-header">
-                <h2>PRESTIGE SYSTEM</h2>
+                <h2>REBIRTH SYSTEM</h2>
                 <button class="close-modal-btn" data-target="rebirth-modal">×</button>
             </div>
             <div class="modal-body">
                 <div class="rebirth-info-grid">
                     <div class="rebirth-column left">
-                        <h3>LIFETIME CASH</h3>
-                        <div class="stat-row"><span class="current-mult highlight">$0</span></div>
+                        <h3>CURRENT MULTIPLIER</h3>
+                        <div class="stat-row"><span class="current-mult highlight">1x</span></div>
                     </div>
                     <div class="rebirth-arrow">➔</div>
                     <div class="rebirth-column right">
-                        <h3>POINTS EARNED</h3>
-                        <div class="stat-row"><span class="new-mult highlight-green">+0 PP</span></div>
+                        <h3>NEW MULTIPLIER</h3>
+                        <div class="stat-row"><span class="new-mult highlight-green">2x</span></div>
                     </div>
                 </div>
                 
                 <div class="rebirth-cost-box">
-                    <span class="rebirth-cost-display">Next Point: $1M</span>
-                </div>
-
-                <div class="prestige-shop-container">
-                    <div class="shop-header">PRESTIGE SHOP (<span id="prestige-points-display">0</span> PP)</div>
-                    <div id="prestige-shop-grid" class="prestige-grid">
-                        <!-- Injected -->
-                    </div>
+                    <span class="rebirth-cost-display">Cost: $1M</span>
                 </div>
                 
                 <div class="rebirth-details">
@@ -300,7 +286,7 @@
                         <ul>
                             <li>✅ Gems & Shop</li>
                             <li>✅ Achievements</li>
-                            <li>✅ Stats</li>
+                            <li>✅ Multiplier Stacks</li>
                         </ul>
                     </div>
                     <div class="detail-box lose">
@@ -313,7 +299,7 @@
                 </div>
 
                 <button id="confirm-rebirth-btn" class="rebirth-btn-action">
-                    PRESTIGE NOW
+                    REBIRTH NOW (2X)
                 </button>
             </div>
         </div>
@@ -434,20 +420,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- Leaderboard Overlay (Custom) -->
-    <div id="leaderboard-overlay" class="leaderboard-dropdown">
-        <div class="leaderboard-header">
-            <h3>GLOBAL LEADERBOARD</h3>
-            <button class="leaderboard-close close-modal-btn" data-target="leaderboard-overlay">×</button>
-        </div>
-        <div class="leaderboard-content">
-             <div class="leaderboard-metric-label">RANKED BY BOTS</div>
-             <div id="leaderboard-scores">
-                 <!-- Injected -->
-             </div>
-        </div>
     </div>
 
     <!-- Daily Reward Button Moved to HUD -->
