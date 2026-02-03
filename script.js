@@ -95,6 +95,12 @@ const GEM_SHOP_ITEMS = {
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
 
+const AD_VARIANTS = [
+    { id: 'turbo', title: 'TURBO SURGE', sub: '3x Income (60s)', icon: '🔥', color: 'linear-gradient(90deg, #ff4757, #ff6b81)' },
+    { id: 'auto', title: 'OVERCLOCK', sub: '10x Speed (30s)', icon: '⚡', color: 'linear-gradient(90deg, #2ed573, #7bed9f)' },
+    { id: 'auto_clicker', title: 'BOT SWARM', sub: 'Auto Clicks (30s)', icon: '🤖', color: 'linear-gradient(90deg, #5352ed, #70a1ff)' }
+];
+
 class RoboClicker {
     constructor() {
         this.gameState = {
@@ -120,7 +126,7 @@ class RoboClicker {
             evolution: {
                 stage: 0,
                 xp: 0,
-                maxXp: 25 // Scales with stage
+                maxXp: 150 // Scales with stage
             },
             unlockedRobots: [0], // Array of tier indices
             
@@ -140,7 +146,7 @@ class RoboClicker {
                 'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
                 'add_drone': { level: 0, baseCost: 500, basePower: 1, name: "Deploy Drone", desc: "Deploys a Drone (Max 5)", type: "action_add_drone" },
                 'upgrade_drone': { level: 0, baseCost: 1000, basePower: 1, name: "Upgrade Drone", desc: "Drones Gain More Power", type: "action_upgrade_drone" },
-                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Critical Chance", desc: "Better Critical Chance", type: "effect_crit" },
+                'crit_money': { level: 0, baseCost: 1500, basePower: 1, name: "Better Critical Chance", desc: "Increases Critical Chance", type: "effect_crit" },
             },
             
             // Gem Shop State
@@ -162,6 +168,8 @@ class RoboClicker {
             lastSave: Date.now(),
             startTime: Date.now()
         };
+
+        this.lastAdSpawn = Date.now(); // Timer for sliding ads
 
         this.adManager = {
             activeBoost: null, // Legacy flag, kept for safety
@@ -550,10 +558,9 @@ class RoboClicker {
             const el = document.createElement('div');
             el.className = `flying-drone tier-${drone.tier}`;
             
-            // STRICT Positioning: Left side only (0% to 100% of container width)
-            // Container is already restricted to left 350px in CSS
-            // We ensure they stay well within bounds to avoid UI overlap
-            const x = Math.random() * 80 + '%'; 
+            // STRICT Positioning: Center-ish to avoid Left Side UI (Ads)
+            // Container is now 100% width. We avoid left 20% and right 20%.
+            const x = (20 + Math.random() * 60) + '%'; 
             const y = Math.random() * 80 + 10 + '%'; // 10% to 90% vertical buffer
             
             el.style.left = x;
@@ -641,11 +648,51 @@ class RoboClicker {
         if (!this.gameState.drones) return 1;
         let boost = 1;
         this.gameState.drones.forEach(d => {
-            // Tier 1: +10%, Tier 2: +30%, Tier 3: +100%
-            const power = Math.pow(3, d.tier - 1) * 0.1;
-            boost += power;
+            // Handle Mega Drone
+            if (d.tier === 'mega') {
+                boost += 20; // Massive +2000% Boost for Mega Drone
+            } else {
+                // Tier 1: +10%, Tier 2: +30%, Tier 3: +100%
+                // Ensure tier is a number
+                const tierNum = parseInt(d.tier);
+                if (!isNaN(tierNum)) {
+                    const power = Math.pow(3, tierNum - 1) * 0.1;
+                    boost += power;
+                }
+            }
         });
         return boost;
+    }
+
+    triggerSlidingAd() {
+        const container = document.getElementById('sliding-ad-container');
+        if (!container) return;
+        
+        // Limit max ads to avoid clutter, maybe 3 or 4?
+        if (container.children.length >= 4) return;
+
+        const variant = AD_VARIANTS[Math.floor(Math.random() * AD_VARIANTS.length)];
+        
+        const el = document.createElement('div');
+        el.className = 'sliding-ad-banner visible'; // visible by default for animation
+        el.style.background = variant.color;
+        el.setAttribute('data-ad-type', variant.id);
+        
+        el.innerHTML = `
+            <div class="banner-icon">${variant.icon}</div>
+            <div class="banner-text">
+                <span class="banner-title">${variant.title}</span>
+                <span class="banner-sub">${variant.sub}</span>
+            </div>
+            <div class="banner-shine"></div>
+        `;
+        
+        el.addEventListener('click', () => {
+            el.remove();
+            this.watchAd(variant.id);
+        });
+        
+        container.appendChild(el);
     }
 
     // --- GAMEPLAY LOGIC ---
@@ -1359,7 +1406,7 @@ class RoboClicker {
         // Reset Evolution
         this.gameState.evolution.stage = 0;
         this.gameState.evolution.xp = 0;
-        this.gameState.evolution.maxXp = 25;
+        this.gameState.evolution.maxXp = 150;
         
         // Reset Heat
         this.heat = 0;
@@ -1481,21 +1528,15 @@ class RoboClicker {
              
              this.els.rebirthBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> REBIRTH <span class="rebirth-cost">$${this.formatNumber(cost)}</span>`;
              
-             // Unlock at 1M lifetime or if already rebirthed
-             const canSee = this.gameState.totalMoney >= 1000000 || this.gameState.rebirthCount > 0;
+             // Always show Rebirth button as per user request
+             this.els.rebirthBtn.style.display = 'block';
              
-             if (canSee) {
-                 this.els.rebirthBtn.style.display = 'block';
-                 // this.els.rebirthBtn.style.opacity = '1'; // Handled by CSS class
-                 if (canAfford) {
-                     this.els.rebirthBtn.classList.add('rebirth-glow');
-                     this.els.rebirthBtn.style.filter = ''; // Remove inline filter
-                 } else {
-                     this.els.rebirthBtn.classList.remove('rebirth-glow');
-                     this.els.rebirthBtn.style.filter = ''; // Let CSS handle it
-                 }
+             if (canAfford) {
+                 this.els.rebirthBtn.classList.add('rebirth-glow');
+                 this.els.rebirthBtn.style.filter = ''; // Remove inline filter
              } else {
-                 this.els.rebirthBtn.style.display = 'none';
+                 this.els.rebirthBtn.classList.remove('rebirth-glow');
+                 this.els.rebirthBtn.style.filter = ''; // Let CSS handle it
              }
         }
 
@@ -2469,15 +2510,8 @@ class RoboClicker {
             this.els.dailyDrawerToggle.addEventListener('click', this.toggleDailyDrawer);
         }
 
-        // Sliding Ad Banner Click
-        const adBanner = document.getElementById('sliding-ad-banner');
-        if (adBanner) {
-            adBanner.addEventListener('click', () => {
-                adBanner.classList.remove('visible');
-                this.toggleBonusDrawer(); // Open drawer to show options
-            });
-        }
-
+        // Sliding Ad Banner Click - Handled in triggerSlidingAd creation logic now
+        
         document.getElementById('open-rebirth-btn').addEventListener('click', () => {
              // Calculate Multipliers
              const currentMult = Math.pow(2, this.gameState.rebirthCount || 0);
@@ -2743,9 +2777,10 @@ class RoboClicker {
             this.updateBoostsUI(); // New UI Update
 
             // --- AUTO SPAWN ADS & OFFERS ---
-            // Sliding Ad Banner: Every ~20 seconds (2% chance per tick)
-            if (Math.random() < 0.005) { // 0.5% per 100ms = ~20s avg
+            // Sliding Ad Banner: Every 10 seconds (Deterministic)
+            if (now - this.lastAdSpawn > 10000) {
                 this.triggerSlidingAd();
+                this.lastAdSpawn = now;
             }
 
             // Free Upgrade Bubble: Very Frequent (5% chance per tick if none exist)

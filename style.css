@@ -1835,6 +1835,40 @@ body {
     100% { transform: translate(0, 0); }
 }
 
+/* Mega Drone Visuals */
+.flying-drone.tier-mega {
+    width: 90px; height: 90px; /* Much Bigger */
+    z-index: 10;
+    filter: drop-shadow(0 0 20px #e056fd);
+    animation: megaDroneHover 3s ease-in-out infinite;
+}
+
+.flying-drone.tier-mega .drone-visual::before {
+    background: radial-gradient(circle at 30% 30%, #fff, #e056fd, #8e44ad);
+    border-color: #ffd700;
+}
+
+.flying-drone.tier-mega .drone-ring {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    border-width: 6px;
+}
+
+.flying-drone.tier-mega .drone-ring-2 {
+    border-color: #e056fd;
+    border-width: 6px;
+}
+
+.flying-drone.tier-mega .drone-engine {
+    width: 20px; height: 40px;
+    background: #00cec9; /* Blue flame */
+}
+
+@keyframes megaDroneHover {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.1); }
+}
+
 /* 4. SMART FREE UPGRADE UI (CASUAL STYLE) */
 .free-upgrade-bubble {
     position: absolute;
@@ -2834,8 +2868,8 @@ body {
 #flying-drones-container {
     position: absolute;
     top: 10%; 
-    left: 2%; 
-    width: 350px; 
+    left: 0; 
+    width: 100%; 
     height: 80%;
     pointer-events: none;
     z-index: 4;
@@ -3624,7 +3658,7 @@ body {
     
     .main-stage {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 40%; /* More space for upgrades */
+        grid-template-rows: 1fr 35%; /* Reduced from 40% to 35% to fit button */
         height: calc(100% - 70px);
         gap: 5px;
     }
@@ -3640,6 +3674,12 @@ body {
     }
     
     .upgrade-icon-box { width: 50px; height: 50px; font-size: 1.5rem; }
+    
+    /* Ensure Rebirth button fits */
+    .rebirth-trigger-btn {
+        padding: 12px;
+        font-size: 1.1rem;
+    }
 }
 
 /* NEW DAILY DRAWER STYLES REMOVED (Moved to Modal) */
