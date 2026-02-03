@@ -1381,8 +1381,8 @@ body {
     border: none;
     border-top: 4px solid var(--dark); /* Separator */
     color: white;
-    font-size: 1.4rem;
-    padding: 20px;
+    font-size: 1.6rem; /* Bigger Text */
+    padding: 40px 20px; /* Much Taller */
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
@@ -1413,7 +1413,7 @@ body {
 
 .rebirth-trigger-btn:hover {
     background: #a569bd;
-    padding-bottom: 25px; /* Subtle lift effect via padding */
+    padding-bottom: 45px; /* Subtle lift effect via padding */
 }
 
 .rebirth-trigger-btn:active {
