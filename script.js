@@ -668,10 +668,17 @@ class RoboClicker {
         const container = document.getElementById('sliding-ad-container');
         if (!container) return;
         
-        // Limit max ads to avoid clutter, maybe 3 or 4?
-        if (container.children.length >= 4) return;
+        // Get currently displayed ad types
+        const currentTypes = Array.from(container.children).map(child => child.getAttribute('data-ad-type'));
+        
+        // Filter variants to find ones NOT currently shown
+        const availableVariants = AD_VARIANTS.filter(v => !currentTypes.includes(v.id));
+        
+        // If all ads are already showing, don't spawn anything (prevents duplicates/patterns)
+        if (availableVariants.length === 0) return;
 
-        const variant = AD_VARIANTS[Math.floor(Math.random() * AD_VARIANTS.length)];
+        // Pick random from AVAILABLE variants
+        const variant = availableVariants[Math.floor(Math.random() * availableVariants.length)];
         
         const el = document.createElement('div');
         el.className = 'sliding-ad-banner visible'; // visible by default for animation
@@ -679,7 +686,9 @@ class RoboClicker {
         el.setAttribute('data-ad-type', variant.id);
         
         el.innerHTML = `
-            <div class="banner-icon">${variant.icon}</div>
+            <div class="banner-icon-box">
+                <div class="banner-icon">${variant.icon}</div>
+            </div>
             <div class="banner-text">
                 <span class="banner-title">${variant.title}</span>
                 <span class="banner-sub">${variant.sub}</span>
@@ -871,23 +880,6 @@ class RoboClicker {
     }
 
     addMoney(amount) {
-        // NOTE: Amount usually passed here is Base Click Power or Auto Base
-        // But for ClickHero, we already applied global mult.
-        // Let's assume addMoney just adds the raw amount passed to it.
-        // Wait, the original addMoney applied multipliers.
-        // I need to be careful.
-        // The original code in clickHero called getClickPower() then addMoney(amount).
-        // addMoney THEN applied all multipliers.
-        
-        // REFACTOR: addMoney should just add money. Multipliers should be calculated at source.
-        // OR: I keep addMoney logic but use getGlobalMultiplier inside it.
-        
-        // Let's check clickHero again.
-        // I changed clickHero to: amount *= globalMult.
-        // So if addMoney ALSO applies globalMult, we double dip.
-        
-        // I will simplify addMoney to just add to state, and move multiplier logic to sources.
-        
         this.gameState.money += amount;
         this.gameState.totalMoney += amount;
         
@@ -897,12 +889,20 @@ class RoboClicker {
     // Helper to calculate auto income with multipliers
     calculateAutoIncome() {
         const baseAuto = this.getAutoPower();
+        const now = Date.now();
+        
+        // --- BOT SWARM LOGIC (Active Clicks Simulation) ---
+        if (this.adManager.boosts['auto_clicker'] && this.adManager.boosts['auto_clicker'] > now) {
+            // "Super Fast" clicks: We simulate this by triggering rapid clicks in the game loop
+            // Since this function returns PASSIVE income, we handle active clicks separately in the loop
+            // BUT, let's inject some base value here just in case? No, better keep it separate.
+        }
+
         if (baseAuto === 0) return 0;
         
         let mult = this.getGlobalMultiplier();
         
         // Auto-specific boost (Overclock)
-        const now = Date.now();
         if (this.adManager.boosts['auto'] && this.adManager.boosts['auto'] > now) {
             mult *= 10;
         }
@@ -1354,12 +1354,37 @@ class RoboClicker {
         // 1. Close Modal
         this.toggleModal('rebirth-modal', false);
 
-        // 2. Show Overlay
+        // 2. Trigger Midgame Ad (Interstitial)
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            window.CrazyGames.SDK.ad.requestAd('midgame', {
+                adStarted: () => {
+                    console.log("Rebirth Ad Started");
+                    this.stopGameplay();
+                },
+                adFinished: () => {
+                    console.log("Rebirth Ad Finished");
+                    this.resumeGameplay();
+                    this.triggerRebirthSequence();
+                },
+                adError: (error) => {
+                    console.warn("Rebirth Ad Error:", error);
+                    this.resumeGameplay();
+                    this.triggerRebirthSequence();
+                }
+            });
+        } else {
+            // Dev Mode
+            console.log("Dev: Rebirth Ad Skipped");
+            this.triggerRebirthSequence();
+        }
+    }
+
+    triggerRebirthSequence() {
+        // 3. Show Overlay & Animation
         const overlay = document.getElementById('rebirth-overlay');
         const multDisplay = document.getElementById('rebirth-mult-display');
         
         // Visual Update
-        // Calculate new multiplier: 2^(count+1)
         const newMult = Math.pow(2, (this.gameState.rebirthCount || 0) + 1);
         if (multDisplay) multDisplay.textContent = `${newMult}X`;
         
@@ -1794,6 +1819,7 @@ class RoboClicker {
             const div = document.createElement('div');
             // Explicitly set 'can-afford' class based on logic
             div.className = `upgrade-item ${canAfford ? 'can-afford' : ''}`;
+            div.setAttribute('data-key', key); // Essential for Smart Ad Targeting
             div.innerHTML = `
                 <div class="upgrade-icon-box">${icons[key] || '<i class="fa-solid fa-wrench"></i>'}</div>
                 <div class="upgrade-content">
@@ -2213,12 +2239,12 @@ class RoboClicker {
             // 1 Minute Boost
             this.adManager.boosts['turbo'] = now + 60000;
             msg = "TURBO SURGE: 3x Income for 1 Minute!";
-            this.toggleBonusDrawer();
+            // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'auto') {
             // 30 Seconds Boost
             this.adManager.boosts['auto'] = now + 30000;
             msg = "OVERCLOCK: 10x Speed for 30 Seconds!";
-             this.toggleBonusDrawer();
+             // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'lucky') {
             // New Logic: 30% of CURRENT CASH
             const reward = Math.floor(this.gameState.money * 0.30); 
@@ -2226,13 +2252,13 @@ class RoboClicker {
             
             // Custom UI for Lucky Strike
             this.showCustomRewardModal(reward);
-            this.toggleBonusDrawer();
+            // this.toggleBonusDrawer(); // Removed per request
             return; // Skip default alert
         } else if (type === 'auto_clicker') {
             // Auto Clicker Ad: 30s of clicks
             this.adManager.boosts['auto_clicker'] = now + 30000;
             msg = "AUTO CLICKER: Bot Swarm Activated!";
-            this.toggleBonusDrawer();
+            // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'offline_2x') {
              if (this.adManager.pendingOfflineAmount) {
                  this.addMoney(this.adManager.pendingOfflineAmount * 2);
@@ -2310,19 +2336,41 @@ class RoboClicker {
             const seconds = Math.floor(diff / 1000);
             
             // Calculate earnings
-            const autoIncome = this.getAutoPower();
-            const tierMult = ROBOT_TIERS[this.gameState.evolution.stage].multiplier;
-
-            const rebirthMult = this.gameState.rebirthMultiplier;
+            // 1. Drones (Main source since Auto Upgrades removed)
+            const droneLvl = this.gameState.droneLevel || 1;
+            const droneCount = this.gameState.drones ? this.gameState.drones.length : 0;
+            const clickPower = this.getClickPower();
             
-            // Base earnings per second = (autoIncome * tierMult * passiveMult * rebirthMult)
-            // Note: In game loop we divide by 10 per 100ms, so total is 1x per second.
+            // Avg Shots Per Sec: (0.1 + lvl*0.02) * 10 (ticks)
+            let fireChance = 0.1 + (droneLvl * 0.02);
+            if (fireChance > 0.6) fireChance = 0.6; // Cap
+            const shotsPerSec = fireChance * 10;
+            
+            // Damage Per Shot: 20% Click Power * Level
+            const dmgPerShot = Math.max(10, clickPower * 0.2 * droneLvl);
+            
+            const droneIncomePerSec = droneCount * shotsPerSec * dmgPerShot;
+
+            // 2. Multipliers
+            // We use getGlobalMultiplier() but we need to exclude TEMPORARY boosts like Turbo
+            // Reconstruct permanent multiplier:
+            let globalMult = 1;
+            globalMult *= this.gameState.rebirthMultiplier;
+            globalMult *= ROBOT_TIERS[this.gameState.evolution.stage].multiplier;
             
             const passiveUpgrade = this.gameState.upgrades['passive_mult'];
-            const passiveMult = passiveUpgrade ? 1 + (passiveUpgrade.level * passiveUpgrade.basePower) : 1;
+            if (passiveUpgrade) globalMult *= (1 + (passiveUpgrade.level * passiveUpgrade.basePower));
+            
+            globalMult *= this.getDroneBoost();
+            
+            if (this.gameState.prestige) {
+                 globalMult *= (1 + (this.gameState.prestige.points * 0.10));
+                 const synLevel = this.gameState.prestige.upgrades['pp_mult'] || 0;
+                 if (synLevel > 0) globalMult *= (1 + (synLevel * 0.5));
+            }
 
-            const rawPerSec = autoIncome * tierMult * passiveMult * rebirthMult;
-            const totalOffline = Math.floor(rawPerSec * seconds * 0.8); // 80% efficiency
+            const totalPerSec = droneIncomePerSec * globalMult;
+            const totalOffline = Math.floor(totalPerSec * seconds * 0.5); // 50% efficiency for offline
             
             if (totalOffline > 0) {
                 this.adManager.pendingOfflineAmount = totalOffline;
@@ -2751,6 +2799,35 @@ class RoboClicker {
                 }
             }
 
+            // --- BOT SWARM (AUTO CLICKER) ---
+            if (this.adManager.boosts['auto_clicker'] && this.adManager.boosts['auto_clicker'] > now) {
+                // Simulate clicks (Super Fast!)
+                // Use safe coordinate center if robot exists
+                let rect = this.els.hero ? this.els.hero.getBoundingClientRect() : null;
+                const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+                const centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+                
+                // Trigger logic (isAuto = true to skip heat/xp for balance, or false for OP?)
+                // User said "click super fast", implying main click power.
+                this.clickHero(null, true); 
+                
+                // Visuals (Manual Trigger since isAuto=true skips them)
+                // 30% chance per tick (approx 3/sec) to avoid lag
+                if (Math.random() < 0.3) {
+                     this.spawnBoltParticle(centerX, centerY);
+                }
+                
+                // Jiggle Robot
+                if (this.els.hero) {
+                    this.els.hero.style.transform = `scale(${0.95 + Math.random() * 0.1})`;
+                }
+                
+                // "AUTO" Text
+                if (Math.random() < 0.1) {
+                    this.spawnDamageNumber("AUTO!", centerX + (Math.random()*60-30), centerY - 60, '#5352ed');
+                }
+            }
+
             // --- TURBO MODE VISUALS ---
             if (this.adManager.boosts['turbo'] && this.adManager.boosts['turbo'] > now) {
                 // Active
@@ -2794,16 +2871,37 @@ class RoboClicker {
     spawnRandomFreeUpgrade() {
         if (document.querySelector('.free-upgrade-bubble')) return; // One at a time
         
+        // Cooldown check to prevent spamming right after one disappears
+        const now = Date.now();
+        if (this.lastFreeUpgradeTime && (now - this.lastFreeUpgradeTime < 5000)) return; // 5s cooldown
+
         const container = this.els.upgradesContainer;
         if (!container) return;
+        
+        // --- SMART LOGIC ---
+        // Check if user can afford ANY upgrade
+        let canAffordAny = false;
+        if (container.querySelector('.upgrade-item.can-afford')) {
+            canAffordAny = true;
+        }
+
+        // Base Chance per tick (100ms)
+        // We want it to appear roughly every 10-15 seconds
+        // 10s = 100 ticks. 1/100 = 0.01
+        // If broke: More frequent (every 5-8s) -> 0.02
+        
+        let chance = canAffordAny ? 0.01 : 0.03;
+        
+        if (Math.random() > chance) return;
         
         const items = container.querySelectorAll('.upgrade-item');
         if (items.length === 0) return;
         
-        // Filter out MAXED items to avoid useless ads
+        // Filter out MAXED items AND 'add_drone' to avoid it spawning there
         const eligibleItems = Array.from(items).filter(item => {
             const btn = item.querySelector('.purchase-btn');
-            return btn && !btn.textContent.includes("MAXED");
+            const key = item.getAttribute('data-key');
+            return btn && !btn.textContent.includes("MAXED") && key !== 'add_drone';
         });
 
         if (eligibleItems.length === 0) return;
@@ -2817,6 +2915,7 @@ class RoboClicker {
             const btn = randomItem.querySelector('.purchase-btn');
             if (btn) {
                 this.showSmartAdOffer(btn, key);
+                this.lastFreeUpgradeTime = now;
             }
         }
     }
@@ -2921,7 +3020,7 @@ class RoboClicker {
 
                 // 2. Evolution Recovery
                 if (!this.gameState.evolution) {
-                    this.gameState.evolution = { stage: 0, xp: 0, maxXp: 25 };
+                    this.gameState.evolution = { stage: 0, xp: 0, maxXp: 150 };
                 }
                 if (!this.gameState.unlockedRobots || !Array.isArray(this.gameState.unlockedRobots)) {
                     this.gameState.unlockedRobots = [0];
