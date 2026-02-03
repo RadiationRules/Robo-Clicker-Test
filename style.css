@@ -680,6 +680,7 @@ body {
     gap: 15px;
     max-height: 70vh;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 5px; /* Space for scrollbar */
 }
 
@@ -890,6 +891,7 @@ body {
 .scrollable-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* Fix side scroll */
     padding: 15px;
     /* Hide Scrollbar */
     scrollbar-width: none; /* Firefox */
@@ -1735,7 +1737,7 @@ body {
     filter: drop-shadow(0 10px 20px rgba(0, 206, 201, 0.2));
 }
 
-.hero-robot:active {
+.hero-robot:active, .hero-robot.active-click {
     transform: scale(0.95);
 }
 
@@ -2196,9 +2198,37 @@ body {
     box-shadow: inset 0 5px 10px rgba(255,255,255,0.2);
 }
 
-/* Eyes Removed per request */
-.robot-eyes { display: none; }
-.eye { display: none; }
+/* Robot Eyes - Friendly Circular */
+.robot-eyes {
+    display: none !important;
+    gap: 15px;
+    z-index: 5;
+    animation: lookAround 5s infinite alternate;
+}
+
+.eye {
+    width: 28px; height: 28px; /* Circular */
+    background: #00f2fe; /* Neon Cyan */
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00f2fe, 0 0 30px #4facfe; /* Strong Neon Glow */
+    display: block;
+    animation: blink 4s infinite;
+}
+
+/* Eye reflection removed for friendly look */
+.eye::after {
+    display: none;
+}
+
+@keyframes lookAround {
+    0%, 30% { transform: translateX(0); }
+    40% { transform: translateX(-6px); }
+    60% { transform: translateX(-6px); }
+    70% { transform: translateX(0); }
+    80% { transform: translateX(6px); }
+    90% { transform: translateX(6px); }
+    100% { transform: translateX(0); }
+}
 
 /* Click Ripple Effect */
 .click-ripple {
@@ -3043,9 +3073,11 @@ body {
     border: 2px solid white;
 }
 
-/* Glowing Eye */
+/* Glowing Eye - REMOVED */
 .drone-visual::after {
     content: '';
+    display: none !important;
+    /*
     position: absolute;
     width: 15%; height: 15%;
     background: #00cec9;
@@ -3053,6 +3085,7 @@ body {
     z-index: 6;
     box-shadow: 0 0 10px #00cec9, 0 0 20px #00cec9;
     animation: blinkEye 3s infinite;
+    */
 }
 
 @keyframes blinkEye {
@@ -3494,6 +3527,204 @@ body {
     );
     animation: rotateRay 20s linear infinite;
     z-index: 0;
+}
+
+/* --- EVOLUTION UI ENHANCEMENTS --- */
+.evo-target-mult {
+    font-size: 1.1rem;
+    font-weight: 900;
+    font-family: 'Rubik', sans-serif;
+    color: white;
+    letter-spacing: 1px;
+    
+    /* Position at end of bar */
+    align-self: flex-end;
+    margin-top: -38px;
+    margin-right: 5px;
+    margin-bottom: 8px;
+    
+    /* Green Styling - Enhanced */
+    background: linear-gradient(135deg, #2ecc71, #00b894);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 3px solid #fff;
+    box-shadow: 
+        0 4px 0 #218c74,
+        0 5px 10px rgba(0,0,0,0.2);
+    z-index: 30;
+    position: relative;
+    
+    /* Animation */
+    transform: rotate(-3deg);
+    transition: transform 0.2s;
+}
+
+.evo-target-mult:hover {
+    transform: rotate(0deg) scale(1.1);
+}
+
+/* --- OVERALL MULTIPLIER ENHANCEMENTS --- */
+.multiplier-pill {
+    background: linear-gradient(135deg, #f1c40f, #e67e22) !important;
+    border: 3px solid #fff !important;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.6) !important;
+    animation: glowMult 2s infinite alternate !important;
+    transform-origin: center;
+    min-width: 100px;
+    justify-content: center;
+}
+
+@keyframes glowMult {
+    from { box-shadow: 0 0 10px rgba(241, 196, 15, 0.4); transform: scale(1); }
+    to { box-shadow: 0 0 25px rgba(241, 196, 15, 0.8); transform: scale(1.05); }
+}
+
+/* --- GOLDEN DRONE (PARACHUTE STYLE) --- */
+.golden-drone {
+    position: absolute;
+    width: 120px; height: 160px;
+    z-index: 200;
+    cursor: pointer;
+    /* Animation handled by JS (Right to Left) */
+}
+
+/* Inner Assembly Sways */
+.parachute-assembly {
+    width: 100%; height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: top center;
+    animation: parachuteRealSway 2s ease-in-out infinite alternate;
+}
+
+@keyframes parachuteRealSway {
+    0% { transform: rotate(-15deg) translateY(0); }
+    100% { transform: rotate(15deg) translateY(10px); }
+}
+
+/* Canopy */
+.parachute-canopy {
+    width: 100px; height: 60px;
+    background: radial-gradient(circle at 50% 100%, #ffd700, #f1c40f, #d4af37);
+    border-radius: 50% 50% 10% 10%;
+    box-shadow: 
+        0 -5px 15px rgba(255, 215, 0, 0.6),
+        inset 0 10px 20px rgba(255, 255, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+    border-top: 2px solid #fff;
+    animation: canopyBreathe 3s ease-in-out infinite;
+}
+
+@keyframes canopyBreathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Sparkle Effect on Canopy */
+.parachute-canopy::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    transform: skewX(-20deg);
+    animation: shineSweep 2s infinite;
+}
+
+@keyframes shineSweep {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+/* Strings */
+.parachute-strings {
+    width: 80px; height: 40px;
+    position: relative;
+    margin-top: -5px;
+}
+
+.p-string {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.6);
+    width: 2px;
+    height: 100%;
+    transform-origin: top center;
+}
+
+.p-string.s1 { left: 10px; transform: rotate(15deg); height: 45px; }
+.p-string.s2 { left: 50%; transform: translateX(-50%); height: 42px; }
+.p-string.s3 { right: 10px; transform: rotate(-15deg); height: 45px; }
+
+/* Payload (Crate) */
+.parachute-payload {
+    position: relative;
+    z-index: 1;
+    margin-top: 0;
+}
+
+.gold-crate {
+    width: 50px; height: 50px;
+    background: linear-gradient(135deg, #f1c40f, #b7950b);
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.gold-crate::before {
+    content: '$';
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+}
+
+/* Cross straps on crate */
+.gold-crate::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-sizing: border-box;
+    border-radius: 6px;
+}
+
+/* Clicked State */
+.golden-drone.clicked {
+    pointer-events: none;
+}
+
+.golden-drone.clicked .parachute-canopy {
+    animation: canopyFlyAway 1s forwards ease-in;
+}
+
+.golden-drone.clicked .gold-crate {
+    animation: crateDrop 0.5s forwards ease-in;
+}
+
+@keyframes canopyFlyAway {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-200px) scale(0.5); opacity: 0; }
+}
+
+@keyframes crateDrop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); opacity: 1; filter: brightness(2); }
+    100% { transform: scale(0.1); opacity: 0; }
+}
+
+/* Remove old Golden Drone Styles that might conflict */
+.golden-drone .drone-visual, .golden-drone .drone-core, .golden-drone .drone-ring, .golden-drone .drone-ring-2, .golden-drone .drone-wings {
+    display: none !important;
 }
 
 @keyframes rotateRay { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

@@ -49,13 +49,13 @@
                     <div class="currency-icon-wrapper" style="background: #9b59b6; color: white;">💎</div>
                     <span id="gems-count">0</span>
                 </div>
+                <div class="stat-pill multiplier-pill">
+                    <span class="icon-sm"><i class="fa-solid fa-bolt"></i></span>
+                    <span id="multiplier-stat">1x</span>
+                </div>
                 <div class="stat-pill">
                     <span class="icon-sm"><i class="fa-solid fa-arrow-pointer"></i></span>
                     <span id="bot-value-stat">1</span>
-                </div>
-                <div class="stat-pill multiplier-pill">
-                    <span class="icon-sm"><i class="fa-solid fa-bolt"></i></span>
-                    <span id="multiplier-stat">Multiplier: 1x</span>
                 </div>
                 <div class="stat-pill">
                     <span class="icon-sm"><i class="fa-solid fa-robot"></i></span>
@@ -99,6 +99,7 @@
                     <div class="fusion-track">
                         <div id="fusion-fill" class="fusion-fill"></div>
                     </div>
+                    <div id="next-evo-mult" class="evo-target-mult">2X</div>
                     <div id="next-evo-preview" class="next-evo-target">
                         <div class="evo-target-icon">🔒</div>
                         <div class="evo-target-info">
@@ -129,8 +130,12 @@
                     <div id="hero-robot" class="hero-robot tier-0">
                         <div class="robot-glow"></div>
                         <div class="robot-head">
-                            <div class="robot-visor"></div>
-                            <!-- Eyes removed as per CSS -->
+                            <div class="robot-visor">
+                                <div class="robot-eyes">
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="robot-neck"></div>
                         <div class="robot-body">
@@ -213,7 +218,7 @@
                 <div class="bonus-icon auto-icon"><i class="fa-solid fa-gears"></i></div>
                 <div class="bonus-info">
                     <div class="bonus-title">Overclock</div>
-                    <div class="bonus-desc">10x Speed (30s)</div>
+                    <div class="bonus-desc">10x Drone Speed (30s)</div>
                 </div>
                 <div class="bonus-action">
                     <button class="bonus-btn" onclick="game.watchAd('auto')">

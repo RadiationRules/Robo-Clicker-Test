@@ -170,6 +170,7 @@ class RoboClicker {
         };
 
         this.lastAdSpawn = Date.now(); // Timer for sliding ads
+        this.lastGoldenDroneSpawn = Date.now(); // Timer for Golden Drone
 
         this.adManager = {
             activeBoost: null, // Legacy flag, kept for safety
@@ -225,6 +226,8 @@ class RoboClicker {
         window.addEventListener('touchstart', resumeAudio);
 
         this.loadGame();
+        
+
         
         // Initialize Tasks Data if missing
         this.initTasks();
@@ -558,10 +561,11 @@ class RoboClicker {
             const el = document.createElement('div');
             el.className = `flying-drone tier-${drone.tier}`;
             
-            // STRICT Positioning: Center-ish to avoid Left Side UI (Ads)
-            // Container is now 100% width. We avoid left 20% and right 20%.
-            const x = (20 + Math.random() * 60) + '%'; 
-            const y = Math.random() * 80 + 10 + '%'; // 10% to 90% vertical buffer
+            // STRICT Positioning: LEFT SIDE ONLY (Boundary Box)
+            // Left: 5% to 35% (Avoids overlapping robot center/right)
+            // Top: 20% to 80% (Vertical Buffer)
+            const x = (5 + Math.random() * 30) + '%'; 
+            const y = (20 + Math.random() * 60) + '%'; 
             
             el.style.left = x;
             el.style.top = y;
@@ -631,9 +635,8 @@ class RoboClicker {
         // Damage & Impact Logic (Synced with hit)
         setTimeout(() => {
             const lvl = this.gameState.droneLevel || 1;
-            // Damage scales with level and click power context
-            // Base: 10% of click power * level
-            const baseDamage = Math.max(10, this.getClickPower() * 0.2 * lvl);
+            // Damage scales: Exactly 50% of User Click Power per shot
+            const baseDamage = Math.max(10, this.getClickPower() * 0.5);
             
             this.addMoney(baseDamage);
             
@@ -645,23 +648,7 @@ class RoboClicker {
     }
 
     getDroneBoost() {
-        if (!this.gameState.drones) return 1;
-        let boost = 1;
-        this.gameState.drones.forEach(d => {
-            // Handle Mega Drone
-            if (d.tier === 'mega') {
-                boost += 20; // Massive +2000% Boost for Mega Drone
-            } else {
-                // Tier 1: +10%, Tier 2: +30%, Tier 3: +100%
-                // Ensure tier is a number
-                const tierNum = parseInt(d.tier);
-                if (!isNaN(tierNum)) {
-                    const power = Math.pow(3, tierNum - 1) * 0.1;
-                    boost += power;
-                }
-            }
-        });
-        return boost;
+        return 1; // Disabled drone multiplier boost as per user request
     }
 
     triggerSlidingAd() {
@@ -1230,6 +1217,10 @@ class RoboClicker {
     }
 
     showSmartAdOffer(targetBtn, key) {
+        // --- STRICT SAFETY CHECK ---
+        // Absolutely prevent spawning on "Deploy Drone"
+        if (key === 'add_drone') return;
+
         // Remove existing
         const existing = document.querySelectorAll('.free-upgrade-bubble');
         existing.forEach(e => e.remove());
@@ -1679,7 +1670,7 @@ class RoboClicker {
         // Update Multiplier Stat (Global)
         if (this.els.multiplierStat) {
              const mult = this.getGlobalMultiplier();
-             this.els.multiplierStat.textContent = `Multiplier: ${this.formatNumber(mult)}x`;
+             this.els.multiplierStat.textContent = `${this.formatNumber(mult)}x`;
         }
 
         this.els.totalBots.textContent = this.formatNumber(this.gameState.totalBotsDeployed);
@@ -1696,18 +1687,91 @@ class RoboClicker {
 
         // Update Next Bot Preview
         const nextPreviewName = document.querySelector('.evo-target-name');
+        const nextMultEl = document.getElementById('next-evo-mult');
+        
         if (nextPreviewName) {
             const nextStage = this.gameState.evolution.stage + 1;
             if (nextStage < ROBOT_TIERS.length) {
                 nextPreviewName.textContent = ROBOT_TIERS[nextStage].name;
                 document.querySelector('.evo-target-label').textContent = "NEXT GOAL";
                 document.querySelector('.evo-target-icon').textContent = "🔒";
+                
+                if (nextMultEl) {
+                    nextMultEl.textContent = `${this.formatNumber(ROBOT_TIERS[nextStage].multiplier)}X`;
+                    nextMultEl.style.display = 'inline-block';
+                }
             } else {
                 nextPreviewName.textContent = "MAXED OUT";
                 document.querySelector('.evo-target-label').textContent = "COMPLETED";
                 document.querySelector('.evo-target-icon').textContent = "👑";
+                
+                if (nextMultEl) nextMultEl.style.display = 'none';
             }
         }
+    }
+
+    spawnGoldenDrone() {
+        const drone = document.createElement('div');
+        drone.className = 'golden-drone';
+        
+        // Random start position (Vertical)
+        // Keep it somewhat central so it doesn't get clipped
+        const startY = 10 + Math.random() * 60; // 10% to 70%
+        
+        drone.style.top = `${startY}%`;
+        drone.style.left = '100%'; // Start at right edge
+        
+        // Parachute Structure
+        drone.innerHTML = `
+            <div class="parachute-assembly">
+                <div class="parachute-canopy"></div>
+                <div class="parachute-strings">
+                    <div class="p-string s1"></div>
+                    <div class="p-string s2"></div>
+                    <div class="p-string s3"></div>
+                </div>
+                <div class="parachute-payload">
+                    <div class="gold-crate">
+                        <div class="shine"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Animation to fly across (Right to Left)
+        const duration = 8000; // 8 seconds to cross
+        const keyframes = [
+            { transform: `translateX(0)` },
+            { transform: `translateX(-120vw)` } // Fly to left
+        ];
+        
+        const anim = drone.animate(keyframes, {
+            duration: duration,
+            easing: 'linear'
+        });
+        
+        anim.onfinish = () => drone.remove();
+        
+        // Click Event
+        drone.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (drone.classList.contains('clicked')) return;
+            
+            drone.classList.add('clicked');
+            anim.pause();
+            
+            // Reward: 20% of current money or 5 mins of income
+            // Balanced: 50x Click Power * Multiplier * 100 (Big Burst)
+            const reward = this.getClickPower() * this.getGlobalMultiplier() * 500; 
+            
+            this.addMoney(reward);
+            this.playNotificationSound();
+            this.spawnDamageNumber(`+$${this.formatNumber(reward)}`, e.clientX, e.clientY, '#FFD700');
+            
+            setTimeout(() => drone.remove(), 600);
+        });
+        
+        document.body.appendChild(drone);
     }
 
     applyRobotVisuals() {
@@ -2348,8 +2412,8 @@ class RoboClicker {
             if (fireChance > 0.6) fireChance = 0.6; // Cap
             const shotsPerSec = fireChance * 10;
             
-            // Damage Per Shot: 20% Click Power * Level
-            const dmgPerShot = Math.max(10, clickPower * 0.2 * droneLvl);
+            // Damage Per Shot: 50% Click Power (Half of user click)
+            const dmgPerShot = Math.max(10, clickPower * 0.5);
             
             const droneIncomePerSec = droneCount * shotsPerSec * dmgPerShot;
 
@@ -2548,6 +2612,34 @@ class RoboClicker {
         this.els.hero.addEventListener('mousedown', handleInteraction);
         this.els.hero.addEventListener('touchstart', handleInteraction);
 
+        // Spacebar Support
+        window.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.key === ' ') && !e.repeat) {
+                // Only trigger if no modal is open
+                const overlay = document.getElementById('modal-overlay');
+                if (overlay && !overlay.classList.contains('hidden')) return;
+
+                e.preventDefault(); // Prevent scrolling
+                
+                // Simulate Center Click
+                if (this.els.hero) {
+                    const rect = this.els.hero.getBoundingClientRect();
+                    const centerX = rect.left + (rect.width / 2);
+                    const centerY = rect.top + (rect.height / 2);
+                    
+                    // Add some random jitter for visual variety
+                    const jitterX = (Math.random() * 40) - 20;
+                    const jitterY = (Math.random() * 40) - 20;
+
+                    this.clickHero({ clientX: centerX + jitterX, clientY: centerY + jitterY });
+                    
+                    // Visual Feedback (CSS :active simulation)
+                    this.els.hero.classList.add('active-click');
+                    setTimeout(() => this.els.hero.classList.remove('active-click'), 100);
+                }
+            }
+        });
+
         // New Bonus Drawer Listeners
         if (this.els.drawerToggle) {
             this.els.drawerToggle.addEventListener('click', this.toggleBonusDrawer);
@@ -2706,7 +2798,7 @@ class RoboClicker {
             el = document.createElement('div');
             el.id = 'heat-mult-text';
             el.className = 'heat-multiplier-text';
-            el.textContent = "Multiplier: 2X";
+            el.textContent = "2X";
             
             // Append to heat system or hero section
             const heatSys = document.querySelector('.heat-system');
@@ -2779,6 +2871,12 @@ class RoboClicker {
              this.addMoney(autoIncome / 10); // per 100ms
         }
             
+            // --- GOLDEN DRONE SPAWN ---
+            if (now - this.lastGoldenDroneSpawn > 30000) { // Every 30 seconds
+                this.spawnGoldenDrone();
+                this.lastGoldenDroneSpawn = now;
+            }
+
             // Robot Personality Check (Randomly trigger animations)
             // 2% chance per 100ms tick (~every 5 seconds on avg)
             if (Math.random() < 0.02) {
