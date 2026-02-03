@@ -665,43 +665,53 @@ class RoboClicker {
     }
 
     triggerSlidingAd() {
-        const container = document.getElementById('sliding-ad-container');
-        if (!container) return;
+        // --- NEW LOGIC: NOTIFICATION ONLY ---
+        // Instead of spawning a banner, we highlight a card in the drawer and notify the user.
         
-        // Get currently displayed ad types
-        const currentTypes = Array.from(container.children).map(child => child.getAttribute('data-ad-type'));
+        // Pick random variant
+        const variants = ['turbo', 'auto', 'auto_clicker'];
+        const type = variants[Math.floor(Math.random() * variants.length)];
         
-        // Filter variants to find ones NOT currently shown
-        const availableVariants = AD_VARIANTS.filter(v => !currentTypes.includes(v.id));
+        // Map type to Card ID
+        let cardId = '';
+        if (type === 'turbo') cardId = 'card-turbo';
+        else if (type === 'auto') cardId = 'card-auto';
+        else if (type === 'auto_clicker') cardId = 'card-swarm';
         
-        // If all ads are already showing, don't spawn anything (prevents duplicates/patterns)
-        if (availableVariants.length === 0) return;
-
-        // Pick random from AVAILABLE variants
-        const variant = availableVariants[Math.floor(Math.random() * availableVariants.length)];
+        const card = document.getElementById(cardId);
+        if (card) {
+            // Remove highlight from others first? No, let them stack or clear all?
+            // Let's clear all first to be neat.
+            ['card-turbo', 'card-auto', 'card-swarm'].forEach(id => {
+                const c = document.getElementById(id);
+                if (c) c.classList.remove('card-highlight');
+            });
+            
+            // Add highlight
+            card.classList.add('card-highlight');
+            
+            // Auto-remove highlight after 15s? Or keep until clicked?
+            // Keep until drawer opened?
+            // Let's remove it after 20s so it doesn't stay forever if ignored.
+            setTimeout(() => {
+                if (card) card.classList.remove('card-highlight');
+            }, 20000);
+        }
         
-        const el = document.createElement('div');
-        el.className = 'sliding-ad-banner visible'; // visible by default for animation
-        el.style.background = variant.color;
-        el.setAttribute('data-ad-type', variant.id);
+        // Trigger Notification on Drawer Button
+        const bonusBadge = document.getElementById('bonus-badge');
+        if (bonusBadge) {
+            bonusBadge.classList.remove('hidden');
+            bonusBadge.classList.add('active-pulse');
+        }
         
-        el.innerHTML = `
-            <div class="banner-icon-box">
-                <div class="banner-icon">${variant.icon}</div>
-            </div>
-            <div class="banner-text">
-                <span class="banner-title">${variant.title}</span>
-                <span class="banner-sub">${variant.sub}</span>
-            </div>
-            <div class="banner-shine"></div>
-        `;
+        const handle = document.getElementById('bonus-btn');
+        if (handle) {
+            handle.classList.add('attention-shake');
+            setTimeout(() => handle.classList.remove('attention-shake'), 1000);
+        }
         
-        el.addEventListener('click', () => {
-            el.remove();
-            this.watchAd(variant.id);
-        });
-        
-        container.appendChild(el);
+        this.playNotificationSound();
     }
 
     // --- GAMEPLAY LOGIC ---
@@ -1486,20 +1496,12 @@ class RoboClicker {
             }
         }
         
-        // Bonus (Drawer)
+        // Bonus (Drawer) Badge logic managed by triggerSlidingAd mostly, 
+        // but we can ensure it hides if drawer is open?
         const bonusBadge = document.getElementById('bonus-badge');
-        if (bonusBadge) {
-             const now = Date.now();
-             
-             // Intro Nudge: Show after 30s if never opened
-             const sessionTime = now - this.gameState.startTime;
-             const showIntro = (sessionTime > 30000 && !this.gameState.hasOpenedDrawer);
-
-             if (showIntro) {
-                 bonusBadge.classList.remove('hidden');
-             } else {
-                 bonusBadge.classList.add('hidden');
-             }
+        if (bonusBadge && this.els.bonusDrawer && this.els.bonusDrawer.classList.contains('open')) {
+             bonusBadge.classList.add('hidden');
+             bonusBadge.classList.remove('active-pulse');
         }
         
         // Index

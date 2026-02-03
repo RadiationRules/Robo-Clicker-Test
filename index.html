@@ -185,13 +185,17 @@
 
     <!-- Bonus Drawer (Left Sidebar) -->
     <div id="bonus-drawer" class="bonus-drawer">
+        <div id="bonus-btn" class="drawer-handle">
+            <div id="bonus-badge" class="notification-badge hidden">!</div>
+            <i class="fa-solid fa-bolt"></i>
+        </div>
         <div class="drawer-header">
             <h2 class="drawer-title-text">POWER UPS</h2>
             <button id="close-bonus-btn" class="close-modal-btn">×</button>
         </div>
         
         <div class="bonus-list">
-            <div class="bonus-card">
+            <div id="card-turbo" class="bonus-card">
                 <div class="best-value-badge">HOT!</div>
                 <div class="bonus-icon turbo-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
                 <div class="bonus-info">
@@ -205,7 +209,7 @@
                 </div>
             </div>
 
-            <div class="bonus-card">
+            <div id="card-auto" class="bonus-card">
                 <div class="bonus-icon auto-icon"><i class="fa-solid fa-gears"></i></div>
                 <div class="bonus-info">
                     <div class="bonus-title">Overclock</div>
@@ -218,8 +222,8 @@
                 </div>
             </div>
 
-            <div class="bonus-card">
-                <div class="bonus-icon auto-icon"><i class="fa-solid fa-robot"></i></div>
+            <div id="card-swarm" class="bonus-card">
+                <div class="bonus-icon lucky-icon"><i class="fa-solid fa-robot"></i></div>
                 <div class="bonus-info">
                     <div class="bonus-title">Bot Swarm</div>
                     <div class="bonus-desc">Auto Clicks (30s)</div>

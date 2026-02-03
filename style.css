@@ -553,15 +553,16 @@ body {
     position: fixed;
     left: 0; top: 50%;
     transform: translateY(-50%) translateX(-100%);
-    background: var(--glass);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 248, 255, 0.95));
     border: 4px solid var(--dark);
     border-left: none;
     border-radius: 0 25px 25px 0;
     padding: 25px;
     z-index: 100;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.2);
-    width: 320px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 10px 10px 0 rgba(0,0,0,0.2), 0 0 20px rgba(0,0,0,0.1);
+    width: 340px;
+    backdrop-filter: blur(10px);
 }
 
 .bonus-drawer.open {
@@ -570,13 +571,13 @@ body {
 
 .drawer-handle {
     position: absolute;
-    right: -70px; /* Wider to fit icon */
+    right: -70px;
     top: 50%;
     transform: translateY(-50%);
     background: var(--accent);
     border: 4px solid var(--dark);
     border-left: none;
-    width: 70px; height: 90px; /* Squarer shape */
+    width: 70px; height: 90px;
     border-radius: 0 20px 20px 0;
     display: flex;
     flex-direction: column;
@@ -586,88 +587,161 @@ body {
     font-weight: 900;
     font-size: 0.9rem;
     box-shadow: 5px 5px 0 rgba(0,0,0,0.2);
-    transition: width 0.2s;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 110;
 }
 
 .drawer-handle:hover {
-    width: 80px; /* Pop out effect */
+    width: 80px;
     right: -80px;
+    background: #ffeaa7;
+}
+
+.drawer-handle.attention-shake {
+    animation: shakeHandle 0.5s ease-in-out;
+}
+
+@keyframes shakeHandle {
+    0%, 100% { transform: translateY(-50%) rotate(0deg); }
+    25% { transform: translateY(-50%) rotate(-10deg); }
+    75% { transform: translateY(-50%) rotate(10deg); }
 }
 
 .drawer-handle svg {
     color: var(--dark);
-    animation: pulse 1.5s infinite; /* Heartbeat attention */
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 0 rgba(255,255,255,0.5));
+    transition: transform 0.3s;
+}
+
+.drawer-handle:hover svg {
+    transform: scale(1.2);
+}
+
+/* Notification Badge Pulse */
+.notification-badge.active-pulse {
+    animation: badgePulse 1.5s infinite;
+    background: #ff4757;
+    box-shadow: 0 0 10px #ff4757;
+}
+
+@keyframes badgePulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+    70% { transform: scale(1.3); box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 3px solid #eee;
+    padding-bottom: 10px;
+}
+
+.drawer-title-text {
+    font-size: 1.8rem;
+    margin: 0;
+    background: linear-gradient(120deg, #6c5ce7, #a29bfe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+    text-transform: uppercase;
+    font-weight: 900;
 }
 
 /* New Best Value Badge */
 .best-value-badge {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    background: var(--danger);
+    top: -12px;
+    right: -12px;
+    background: linear-gradient(45deg, #ff6b6b, #ee5253);
     color: white;
-    padding: 4px 10px;
-    border-radius: 10px;
+    padding: 6px 12px;
+    border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 900;
     border: 3px solid var(--dark);
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-    transform: rotate(10deg);
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    transform: rotate(15deg);
     z-index: 10;
-    animation: bounceIn 1s infinite alternate;
+    animation: bounceBadge 2s infinite ease-in-out;
+}
+
+@keyframes bounceBadge {
+    0%, 100% { transform: rotate(15deg) scale(1); }
+    50% { transform: rotate(15deg) scale(1.1); }
+}
+
+.bonus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 5px; /* Space for scrollbar */
 }
 
 .bonus-card {
-    position: relative; /* For badge positioning */
+    position: relative;
     background: white;
-    border: 5px solid var(--dark); /* Thicker border */
+    border: 4px solid var(--dark);
     border-radius: 20px;
     padding: 15px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column; /* Stacked layout for better mobile/drawer fit */
-    gap: 12px;
-    box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
-    transition: transform 0.1s;
-}
-
-.bonus-card:hover {
-    transform: scale(1.02);
-}
-
-.bonus-content-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-/* We need to use :nth-child or just flex properties since I didn't add a wrapper class in HTML for top part.
-   Actually, the HTML is: Icon, Info, Action.
-   I can make the card a grid.
-*/
-.bonus-card {
     display: grid;
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 70px 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas: 
         "icon info"
         "action action";
-    align-items: center;
+    gap: 10px;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.1);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: visible;
+}
+
+.bonus-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 10px 10px 0 rgba(0,0,0,0.15);
+    border-color: #6c5ce7;
 }
 
 .bonus-icon {
     grid-area: icon;
-    width: 60px; height: 60px; /* Bigger icons */
-    border-radius: 12px;
+    width: 70px; height: 70px;
+    border-radius: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
     color: white;
     border: 3px solid var(--dark);
-    font-size: 1.5rem;
+    font-size: 2rem;
+    background: #dfe6e9;
+    position: relative;
+    overflow: hidden;
 }
-.turbo-icon { background: var(--danger); }
-.auto-icon { background: var(--primary); }
-.lucky-icon { background: var(--purple); }
+
+/* Icon shines */
+.bonus-icon::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: shineIcon 3s infinite;
+}
+
+@keyframes shineIcon {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    20% { transform: translateX(100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+.turbo-icon { background: linear-gradient(135deg, #ff7675, #d63031); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+.auto-icon { background: linear-gradient(135deg, #74b9ff, #0984e3); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+.lucky-icon { background: linear-gradient(135deg, #a29bfe, #6c5ce7); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
 
 .bonus-info { 
     grid-area: info;
@@ -675,18 +749,26 @@ body {
     flex-direction: column;
     justify-content: center;
 }
+
 .bonus-title { 
     font-family: var(--font-main); 
-    font-size: 1.2rem; /* Thicker/Bigger */
+    font-size: 1.3rem;
     font-weight: 900;
     text-transform: uppercase;
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
+    color: var(--dark);
 }
+
 .bonus-desc { 
     font-size: 0.9rem; 
-    color: #555; 
-    font-weight: 800; /* Thicker */
+    color: #636e72; 
+    font-weight: 800;
+    background: #f1f2f6;
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: inline-block;
+    align-self: flex-start;
 }
 
 .bonus-action {
@@ -697,24 +779,70 @@ body {
 
 .bonus-btn {
     width: 100%;
-    background: var(--success);
+    background: linear-gradient(180deg, #2ecc71, #27ae60);
     color: white;
     border: 3px solid var(--dark);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 900;
-    padding: 10px;
-    box-shadow: 0 4px 0 var(--dark);
+    padding: 12px;
+    box-shadow: 0 4px 0 #1e8449;
     text-transform: uppercase;
     transition: all 0.1s;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
 }
-.bonus-btn:hover { background: #5cb85c; transform: translateY(-2px); box-shadow: 0 6px 0 var(--dark); }
-.bonus-btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--dark); }
+
+.bonus-btn:hover { 
+    background: linear-gradient(180deg, #4cd137, #44bd32); 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 0 #1e8449; 
+}
+
+.bonus-btn:active { 
+    transform: translateY(2px); 
+    box-shadow: 0 0 0 #1e8449; 
+}
+
+.bonus-btn i {
+    animation: pulse 1s infinite;
+}
+
+/* Card Highlight (Spawned State) */
+.bonus-card.card-highlight {
+    border-color: #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+    animation: pulseCard 2s infinite;
+    z-index: 5;
+}
+
+.bonus-card.card-highlight::before {
+    content: 'AVAILABLE NOW!';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #f1c40f;
+    color: var(--dark);
+    font-weight: 900;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 10px;
+    border: 2px solid var(--dark);
+    white-space: nowrap;
+    animation: bounceIn 0.5s;
+    z-index: 20;
+}
+
+@keyframes pulseCard {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(241, 196, 15, 0.6); }
+    50% { transform: scale(1.03); box-shadow: 0 0 25px rgba(241, 196, 15, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(241, 196, 15, 0.6); }
+}
 
 /* --- MAIN STAGE --- */
 .main-stage {
@@ -1781,10 +1909,10 @@ body {
 /* 5X MULTIPLIER ANIMATION */
 .heat-multiplier-text {
     position: absolute;
-    top: -60px; /* Adjusted for bigger size */
+    top: -80px; /* Adjusted higher as requested */
     left: 50%;
     transform: translateX(-50%);
-    font-size: 3.5rem; /* Much Bigger */
+    font-size: 3.5rem; 
     font-weight: 900;
     color: #e056fd;
     text-shadow: 0 0 10px #e056fd, 3px 3px 0 white;
@@ -1797,7 +1925,7 @@ body {
 
 .heat-multiplier-text.active {
     opacity: 1;
-    animation: buzzText 0.05s infinite; /* Faster Buzz effect */
+    animation: buzzText 0.3s infinite; /* Slower satisfying buzz */
 }
 
 @keyframes buzzText {
@@ -2872,7 +3000,7 @@ body {
     width: 100%; 
     height: 80%;
     pointer-events: none;
-    z-index: 4;
+    z-index: 15; /* Higher than robot (5), lower than HUD (20) */
 }
 
 .flying-drone {
@@ -3634,53 +3762,53 @@ body {
 }
 
 /* Mobile specific - Ensure scrolling for upgrades but hero fixed */
-@media (max-width: 599px) {
-    body {
-        height: 100%; /* Allow scroll on mobile body if needed, or fixed */
-        overflow: hidden; /* App-like feel */
-        position: fixed; /* Prevent bounce */
+    @media (max-width: 599px) {
+        body {
+            height: 100%; /* Allow scroll on mobile body if needed, or fixed */
+            overflow: hidden; /* App-like feel */
+            position: fixed; /* Prevent bounce */
+        }
+        
+        .game-wrapper {
+            height: 100%;
+            padding: 5px;
+            gap: 5px;
+        }
+        
+        .top-hud {
+            padding: 5px 10px;
+        }
+        
+        .stats-group { gap: 8px; }
+        .currency-container { font-size: 1.4rem; padding: 4px 15px; }
+        .stat-pill { font-size: 0.8rem; padding: 4px 10px; }
+        .icon-btn { width: 45px; height: 45px; font-size: 1.2rem; }
+        
+        .main-stage {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr 30%; /* Fixed to 30% to fit rebirth button */
+            height: calc(100% - 70px);
+            gap: 5px;
+        }
+        
+        .hero-robot {
+            transform: scale(0.75); /* Fit mobile */
+        }
+        
+        .upgrade-item {
+            padding: 8px;
+            grid-template-columns: 50px 1fr 70px;
+            gap: 8px;
+        }
+        
+        .upgrade-icon-box { width: 50px; height: 50px; font-size: 1.5rem; }
+        
+        /* Ensure Rebirth button fits */
+        .rebirth-trigger-btn {
+            padding: 10px; /* Smaller padding */
+            font-size: 1rem;
+        }
     }
-    
-    .game-wrapper {
-        height: 100%;
-        padding: 5px;
-        gap: 5px;
-    }
-    
-    .top-hud {
-        padding: 5px 10px;
-    }
-    
-    .stats-group { gap: 8px; }
-    .currency-container { font-size: 1.4rem; padding: 4px 15px; }
-    .stat-pill { font-size: 0.8rem; padding: 4px 10px; }
-    .icon-btn { width: 45px; height: 45px; font-size: 1.2rem; }
-    
-    .main-stage {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 35%; /* Reduced from 40% to 35% to fit button */
-        height: calc(100% - 70px);
-        gap: 5px;
-    }
-    
-    .hero-robot {
-        transform: scale(0.75); /* Fit mobile */
-    }
-    
-    .upgrade-item {
-        padding: 8px;
-        grid-template-columns: 50px 1fr 70px;
-        gap: 8px;
-    }
-    
-    .upgrade-icon-box { width: 50px; height: 50px; font-size: 1.5rem; }
-    
-    /* Ensure Rebirth button fits */
-    .rebirth-trigger-btn {
-        padding: 12px;
-        font-size: 1.1rem;
-    }
-}
 
 /* NEW DAILY DRAWER STYLES REMOVED (Moved to Modal) */
 
