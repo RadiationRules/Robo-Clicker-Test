@@ -2,33 +2,31 @@
 const ROBOT_TIERS = [
     { name: "Prototype X-1", multiplier: 1, class: "tier-0", desc: "Basic clicker unit.", rarity: "Common" },
     { name: "Scout", multiplier: 2, class: "tier-1", desc: "Agile reconnaissance bot.", rarity: "Common" },
-    { name: "Guardian", multiplier: 2, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
-    { name: "Cobalt", multiplier: 5, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
-    { name: "Sentinel", multiplier: 5, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
-    { name: "Sovereign", multiplier: 5, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
+    { name: "Nano", multiplier: 2, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
+    { name: "Sentinel", multiplier: 5, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
+    { name: "Guardian", multiplier: 5, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
+    { name: "MiniMech", multiplier: 5, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
     { name: "Mech", multiplier: 10, class: "tier-6", desc: "Powered by unstable core.", rarity: "Epic" },
     { name: "Void", multiplier: 10, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
     { name: "Titan", multiplier: 25, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
     { name: "Warlord", multiplier: 25, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
-    { name: "Heavy Siege Unit", multiplier: 25, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
-    { name: "Storm Bringer", multiplier: 25, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
-    { name: "Solar Archon", multiplier: 50, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
-    { name: "Lunar Phantom", multiplier: 50, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
-    { name: "Time Weaver", multiplier: 50, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
-    { name: "Dimensional Horror", multiplier: 100, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
-    { name: "Quantum Seraph", multiplier: 100, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
+    { name: "Siege Unit", multiplier: 25, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
+    { name: "Legion", multiplier: 25, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
+    { name: "Archon", multiplier: 50, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
+    { name: "Phantom", multiplier: 50, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
+    { name: "Paragon", multiplier: 50, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
+    { name: "Chronos", multiplier: 100, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
+    { name: "Quantum", multiplier: 100, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
     { name: "The Architect", multiplier: 100, class: "tier-21", desc: "Builder of universes.", rarity: "Omega" }
 ];
 
-// Generate Tiered Tasks
+
 const generateTasks = () => {
     const tasks = [];
-    const tiers = 10; // 10 Tiers of progression
+    const tiers = 
     
     for (let i = 1; i <= tiers; i++) {
-        // 1. Click Count (Rebalanced: Much easier scaling)
-        // Was: 100 * 5^(i-1) -> ~195M at Tier 10
-        // Now: 250 * 2^(i-1) -> ~128k at Tier 10 (Very reasonable)
+        
         const clickTarget = Math.floor(250 * Math.pow(2, i - 1)); 
         tasks.push({
             id: `clicks_t${i}`,
@@ -36,13 +34,11 @@ const generateTasks = () => {
             desc: `Click ${clickTarget.toLocaleString()} Times`,
             type: 'clicks',
             target: clickTarget,
-            reward: 25 * i, // Generous Gems: 25, 50, 75...
+            reward: 20 * i, // Generous Gems: 25, 50, 75...
             icon: 'fa-fingerprint'
         });
 
-        // 2. Earn Money (Rebalanced)
-        // Was: 1000 * 10^(i-1) -> ~1T at Tier 10
-        // Now: 1000 * 6^(i-1) -> ~10B at Tier 10
+        
         const moneyTarget = 1000 * Math.pow(6, i - 1);
         tasks.push({
             id: `earn_t${i}`,
@@ -50,7 +46,7 @@ const generateTasks = () => {
             desc: `Earn $${moneyTarget.toLocaleString()} Total`,
             type: 'money_earned',
             target: moneyTarget,
-            reward: 30 * i, // More gems for money tasks
+            reward: 15 * i, // More gems for money tasks
             icon: 'fa-sack-dollar'
         });
 
@@ -76,7 +72,7 @@ const generateTasks = () => {
                 type: 'upgrade_level',
                 upgradeKey: 'add_drone', // Uses upgrade level as count essentially
                 target: i,
-                reward: 50 * i, // Big reward for drones
+                reward: 40 * i, // Big reward for drones
                 icon: 'fa-helicopter'
             });
         }
@@ -86,7 +82,7 @@ const generateTasks = () => {
 
 const TASKS_DATA = generateTasks();
 
-const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
+const DRONE_COSTS = [1000, 50000, 1000000, 500000000, 1000000000];
 
 const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
@@ -96,9 +92,9 @@ const GEM_SHOP_ITEMS = {
 };
 
 const AD_VARIANTS = [
-    { id: 'turbo', title: 'TURBO SURGE', sub: '3x Income (60s)', icon: '🔥', color: 'linear-gradient(90deg, #ff4757, #ff6b81)' },
-    { id: 'auto', title: 'OVERCLOCK', sub: '10x Speed (30s)', icon: '⚡', color: 'linear-gradient(90deg, #2ed573, #7bed9f)' },
-    { id: 'auto_clicker', title: 'BOT SWARM', sub: 'Auto Clicks (30s)', icon: '🤖', color: 'linear-gradient(90deg, #5352ed, #70a1ff)' }
+    { id: 'turbo', title: 'TURBO SURGE', sub: '3x Money Income (60s)', icon: '🔥', color: 'linear-gradient(90deg, #ff4757, #ff6b81)' },
+    { id: 'auto', title: 'OVERCLOCK', sub: '10x Drone Speed (60s)', icon: '⚡', color: 'linear-gradient(90deg, #2ed573, #7bed9f)' },
+    { id: 'auto_clicker', title: 'BOT SWARM', sub: 'Auto Clicks (60s)', icon: '🤖', color: 'linear-gradient(90deg, #5352ed, #70a1ff)' }
 ];
 
 class RoboClicker {
@@ -242,7 +238,7 @@ class RoboClicker {
         this.renderTasks(); // Initial Render
         this.renderGemShop();
         
-        // Check Daily Reward but DO NOT auto-open modal on init
+        
         this.checkDailyReward(false); 
         this.applyRobotVisuals();
         
@@ -263,11 +259,11 @@ class RoboClicker {
                     loadingScreen.remove();
                 }, 1000); // Wait for fade out
             }
-        }, 2000); // Show for at least 2 seconds
+        }, 
     }
     
     initTasks() {
-        // Ensure all defined tasks exist in state
+        
         TASKS_DATA.forEach(task => {
             if (!this.gameState.tasks[task.id]) {
                 this.gameState.tasks[task.id] = { 
@@ -278,11 +274,11 @@ class RoboClicker {
             }
         });
         
-        // Clean up old tasks that no longer exist (optional, prevents save bloat)
+        
         const taskIds = new Set(TASKS_DATA.map(t => t.id));
         for (const key in this.gameState.tasks) {
             if (!taskIds.has(key)) {
-                // delete this.gameState.tasks[key]; // Keep for legacy safety or delete
+                
             }
         }
         
@@ -462,16 +458,15 @@ class RoboClicker {
         const osc = this.audioCtx.createOscillator();
         const gainNode = this.audioCtx.createGain();
         
-        // Soft "Bubble" Pop
-        // Sine wave, low pitch, very short envelope
+        
         const baseFreq = 300 + (Math.random() * 50); // Slight variation
         osc.type = 'sine'; 
         
         const now = this.audioCtx.currentTime;
         osc.frequency.setValueAtTime(baseFreq, now);
         osc.frequency.linearRampToValueAtTime(baseFreq + 100, now + 0.1); // Pitch up slightly
-        
-        const vol = (this.gameState.settings.sfxVolume / 100) * 0.05; // Much lower volume (5%) - Permanent Fix
+
+        const vol = (this.gameState.settings.sfxVolume / 100) * 0.10; // Much lower volume (10%) - Permanent Fix
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(vol, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
@@ -532,7 +527,7 @@ class RoboClicker {
     updateMusicVolume() {
         if (this.bgMusic) {
             // Volume range 0.0 to 0.05 (max) for "permanently quieter" feel
-            const vol = (this.gameState.settings.musicVolume / 100) * 0.05;
+            const vol = (this.gameState.settings.musicVolume / 100) * 0.10;
             this.bgMusic.volume = vol;
         }
     }
@@ -561,9 +556,7 @@ class RoboClicker {
             const el = document.createElement('div');
             el.className = `flying-drone tier-${drone.tier}`;
             
-            // STRICT Positioning: LEFT SIDE ONLY (Boundary Box)
-            // Left: 5% to 35% (Avoids overlapping robot center/right)
-            // Top: 20% to 80% (Vertical Buffer)
+            
             const x = (5 + Math.random() * 30) + '%'; 
             const y = (20 + Math.random() * 60) + '%'; 
             
@@ -652,8 +645,7 @@ class RoboClicker {
     }
 
     triggerSlidingAd() {
-        // --- NEW LOGIC: NOTIFICATION ONLY ---
-        // Instead of spawning a banner, we highlight a card in the drawer and notify the user.
+        // 
         
         // Pick random variant
         const variants = ['turbo', 'auto', 'auto_clicker'];
@@ -677,9 +669,7 @@ class RoboClicker {
             // Add highlight
             card.classList.add('card-highlight');
             
-            // Auto-remove highlight after 15s? Or keep until clicked?
-            // Keep until drawer opened?
-            // Let's remove it after 20s so it doesn't stay forever if ignored.
+           
             setTimeout(() => {
                 if (card) card.classList.remove('card-highlight');
             }, 20000);
