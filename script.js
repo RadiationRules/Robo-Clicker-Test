@@ -26,7 +26,7 @@ const generateTasks = () => {
     const tiers = 10; // 10 Tiers of progression
     
     for (let i = 1; i <= tiers; i++) {
-        // 1. Click Count (Rebalanced: Much easier scaling)
+    
         // Was: 100 * 5^(i-1) -> ~195M at Tier 10
         // Now: 250 * 2^(i-1) -> ~128k at Tier 10 (Very reasonable)
         const clickTarget = Math.floor(250 * Math.pow(2, i - 1)); 
@@ -86,10 +86,10 @@ const generateTasks = () => {
 
 const TASKS_DATA = generateTasks();
 
-const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
+const DRONE_COSTS = [500, 25000, 500000, 10000000, 5000000000];
 
 const GEM_SHOP_ITEMS = {
-    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
+    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 250, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
@@ -193,7 +193,7 @@ class RoboClicker {
     }
 
     async init() {
-        console.log("Initializing Robo Clicker Elite...");
+        console.log("Initializing Robo Clicker...");
 
         // --- CrazyGames SDK Initialization ---
         if (window.CrazyGames && window.CrazyGames.SDK) {
