@@ -277,7 +277,10 @@ class RoboClicker {
                 };
             }
         });
-        
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+    CrazyGames.SDK.gameplayStart();
+}
+
         // Clean up old tasks that no longer exist (optional, prevents save bloat)
         const taskIds = new Set(TASKS_DATA.map(t => t.id));
         for (const key in this.gameState.tasks) {
