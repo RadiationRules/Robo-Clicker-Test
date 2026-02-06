@@ -2,7 +2,7 @@
 const ROBOT_TIERS = [
     { name: "Prototype X-1", multiplier: 1, class: "tier-0", desc: "Basic clicker unit.", rarity: "Common" },
     { name: "Scout", multiplier: 2, class: "tier-1", desc: "Agile reconnaissance bot.", rarity: "Common" },
-    { name: "NanoBot", multiplier: 2, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
+    { name: "Guardian", multiplier: 2, class: "tier-2", desc: "Reinforced steel chassis.", rarity: "Common" },
     { name: "Cobalt", multiplier: 5, class: "tier-3", desc: "Enhanced speed servos.", rarity: "Rare" },
     { name: "Sentinel", multiplier: 5, class: "tier-4", desc: "Energy shield generator.", rarity: "Rare" },
     { name: "Sovereign", multiplier: 5, class: "tier-5", desc: "Luxury plating, max efficiency.", rarity: "Rare" },
@@ -10,13 +10,13 @@ const ROBOT_TIERS = [
     { name: "Void", multiplier: 10, class: "tier-7", desc: "Phases through reality.", rarity: "Epic" },
     { name: "Titan", multiplier: 25, class: "tier-8", desc: "Forged in star fire.", rarity: "Legendary" },
     { name: "Warlord", multiplier: 25, class: "tier-9", desc: "Commands entire fleets.", rarity: "Legendary" },
-    { name: "Siege Unit", multiplier: 25, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
-    { name: "Vanguard", multiplier: 25, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
-    { name: "Archon", multiplier: 50, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
-    { name: "Phantom", multiplier: 50, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
-    { name: "Paragon", multiplier: 50, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
-    { name: "Chronos", multiplier: 100, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
-    { name: "Quantum", multiplier: 100, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
+    { name: "Heavy Siege Unit", multiplier: 25, class: "tier-14", desc: "Mobile fortress.", rarity: "Legendary" },
+    { name: "Storm Bringer", multiplier: 25, class: "tier-15", desc: "Harnesses the weather.", rarity: "Legendary" },
+    { name: "Solar Archon", multiplier: 50, class: "tier-16", desc: "Powered by a miniature sun.", rarity: "Godly" },
+    { name: "Lunar Phantom", multiplier: 50, class: "tier-17", desc: "Silent as the moon's shadow.", rarity: "Godly" },
+    { name: "Time Weaver", multiplier: 50, class: "tier-18", desc: "Manipulates the timeline.", rarity: "Godly" },
+    { name: "Dimensional Horror", multiplier: 100, class: "tier-19", desc: "It shouldn't exist.", rarity: "Omega" },
+    { name: "Quantum Seraph", multiplier: 100, class: "tier-20", desc: "Multi-dimensional angel.", rarity: "Omega" },
     { name: "The Architect", multiplier: 100, class: "tier-21", desc: "Builder of universes.", rarity: "Omega" }
 ];
 
@@ -26,7 +26,7 @@ const generateTasks = () => {
     const tiers = 10; // 10 Tiers of progression
     
     for (let i = 1; i <= tiers; i++) {
-    
+        // 1. Click Count (Rebalanced: Much easier scaling)
         // Was: 100 * 5^(i-1) -> ~195M at Tier 10
         // Now: 250 * 2^(i-1) -> ~128k at Tier 10 (Very reasonable)
         const clickTarget = Math.floor(250 * Math.pow(2, i - 1)); 
@@ -86,10 +86,10 @@ const generateTasks = () => {
 
 const TASKS_DATA = generateTasks();
 
-const DRONE_COSTS = [500, 25000, 500000, 10000000, 5000000000];
+const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 
 const GEM_SHOP_ITEMS = {
-    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 250, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
+    'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
@@ -193,7 +193,7 @@ class RoboClicker {
     }
 
     async init() {
-        console.log("Initializing Robo Clicker...");
+        console.log("Initializing Robo Clicker Elite...");
 
         // --- CrazyGames SDK Initialization ---
         if (window.CrazyGames && window.CrazyGames.SDK) {
@@ -277,10 +277,7 @@ class RoboClicker {
                 };
             }
         });
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-    CrazyGames.SDK.gameplayStart();
-}
-
+        
         // Clean up old tasks that no longer exist (optional, prevents save bloat)
         const taskIds = new Set(TASKS_DATA.map(t => t.id));
         for (const key in this.gameState.tasks) {
