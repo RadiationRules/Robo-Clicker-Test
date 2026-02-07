@@ -2848,14 +2848,15 @@ class RoboClicker {
             // FULL NUCLEAR RESET
             this.isHardReset = true; // Prevent auto-save from overriding
             
-            // Clear Cloud Data
+            // Use SDK Manager for unified reset
             if (window.CrazyManager) {
-                await window.CrazyManager.clearData('roboClickerElite');
+                await window.CrazyManager.resetProgress('roboClickerElite');
+            } else {
+                // Fallback if Manager missing (shouldn't happen)
+                localStorage.clear();
+                sessionStorage.clear();
+                location.reload();
             }
-            
-            localStorage.clear();
-            sessionStorage.clear();
-            location.reload();
         });
 
         this.els.confirmNoBtn.addEventListener('click', () => {

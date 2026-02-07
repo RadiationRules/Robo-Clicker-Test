@@ -17,8 +17,10 @@ class CrazySDKManager {
         if (this.isInitialized) return true;
 
         if (!window.CrazyGames || !window.CrazyGames.SDK) {
-            this.log("CrazyGames SDK not found in window object.");
-            return false;
+            this.log("CrazyGames SDK not found in window object. Enabling Mock Mode.");
+            this.mockMode = true;
+            this.isInitialized = true;
+            return true;
         }
 
         try {
@@ -28,8 +30,10 @@ class CrazySDKManager {
             this.log("SDK Initialized successfully.");
             return true;
         } catch (error) {
-            this.error("SDK Initialization failed:", error);
-            return false;
+            this.error("SDK Initialization failed. Enabling Mock Mode.", error);
+            this.mockMode = true;
+            this.isInitialized = true;
+            return true; // Return true to allow game to start
         }
     }
 
@@ -38,6 +42,7 @@ class CrazySDKManager {
      */
     gameplayStart() {
         if (!this.checkInit()) return;
+        if (this.mockMode) return;
         try {
             this.sdk.game.gameplayStart();
             this.log("Gameplay Started");
@@ -51,6 +56,7 @@ class CrazySDKManager {
      */
     gameplayStop() {
         if (!this.checkInit()) return;
+        if (this.mockMode) return;
         try {
             this.sdk.game.gameplayStop();
             this.log("Gameplay Stopped");
@@ -70,6 +76,16 @@ class CrazySDKManager {
         }
 
         this.log("Requesting Rewarded Ad...");
+
+        if (this.mockMode) {
+            this.log("Mock Mode: Simulating Ad...");
+            if (callbacks.adStarted) callbacks.adStarted();
+            setTimeout(() => {
+                this.log("Mock Mode: Ad Finished");
+                if (callbacks.adFinished) callbacks.adFinished();
+            }, 1000);
+            return;
+        }
 
         try {
             await this.sdk.ad.requestAd('rewarded', {
@@ -110,6 +126,16 @@ class CrazySDKManager {
 
         this.log("Requesting Midgame Ad...");
 
+        if (this.mockMode) {
+            this.log("Mock Mode: Simulating Midgame Ad...");
+            if (callbacks.adStarted) callbacks.adStarted();
+            setTimeout(() => {
+                this.log("Mock Mode: Ad Finished");
+                if (callbacks.adFinished) callbacks.adFinished();
+            }, 1000);
+            return;
+        }
+
         try {
             await this.sdk.ad.requestAd('midgame', {
                 adStarted: () => {
@@ -142,6 +168,12 @@ class CrazySDKManager {
      */
     async saveData(key, data) {
         if (!this.checkInit()) return;
+        
+        if (this.mockMode) {
+            this.log(`Mock Mode: Saved data for key: ${key}`);
+            return;
+        }
+
         try {
             const json = JSON.stringify(data);
             await this.sdk.data.setItem(key, json);
@@ -158,6 +190,12 @@ class CrazySDKManager {
      */
     async loadData(key) {
         if (!this.checkInit()) return null;
+        
+        if (this.mockMode) {
+            this.log(`Mock Mode: Load data for key: ${key} (returning null)`);
+            return null;
+        }
+
         try {
             const json = await this.sdk.data.getItem(key);
             if (json) {
@@ -177,6 +215,12 @@ class CrazySDKManager {
      */
     async clearData(key) {
         if (!this.checkInit()) return;
+        
+        if (this.mockMode) {
+            this.log(`Mock Mode: Cleared data for key: ${key}`);
+            return;
+        }
+
         try {
             await this.sdk.data.removeItem(key);
             this.log(`Cleared data for key: ${key}`);
@@ -212,6 +256,7 @@ class CrazySDKManager {
      */
     async getUserToken() {
         if (!this.checkInit()) return null;
+        if (this.mockMode) return "mock-token";
         try {
             const token = await this.sdk.user.getUserToken();
             return token;
@@ -227,6 +272,7 @@ class CrazySDKManager {
      */
     async hasAdblock() {
         if (!this.checkInit()) return false;
+        if (this.mockMode) return false;
         try {
             return await this.sdk.ad.hasAdblock();
         } catch (e) {
