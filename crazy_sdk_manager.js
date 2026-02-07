@@ -172,6 +172,20 @@ class CrazySDKManager {
     }
 
     /**
+     * Clear data from cloud.
+     * @param {string} key
+     */
+    async clearData(key) {
+        if (!this.checkInit()) return;
+        try {
+            await this.sdk.data.removeItem(key);
+            this.log(`Cleared data for key: ${key}`);
+        } catch (e) {
+            this.error("clearData error:", e);
+        }
+    }
+
+    /**
      * Get User Token for backend verification.
      * @returns {string|null} Token or null
      */

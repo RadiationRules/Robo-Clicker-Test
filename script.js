@@ -252,14 +252,17 @@ class RoboClicker {
             window.CrazyManager.gameplayStart();
         }
 
-        // --- Remove Loading Screen (Animated Pop-Out) ---
+        // --- Remove Loading Screen (Smooth Fade) ---
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
-            // Add pop-out animation class
-            loadingScreen.style.animation = 'popOut 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards';
+            // Wait a bit to ensure assets are ready and user sees the screen
             setTimeout(() => {
-                loadingScreen.remove();
-            }, 400); 
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.transform = 'scale(1.1)'; // Slight pop out effect
+                setTimeout(() => {
+                    loadingScreen.remove();
+                }, 1000); // 1 second smooth fade
+            }, 500); // Min visibility time
         }
     }
     
@@ -2841,9 +2844,15 @@ class RoboClicker {
             document.getElementById('settings-modal').classList.add('hidden');
         });
 
-        this.els.confirmYesBtn.addEventListener('click', () => {
+        this.els.confirmYesBtn.addEventListener('click', async () => {
             // FULL NUCLEAR RESET
             this.isHardReset = true; // Prevent auto-save from overriding
+            
+            // Clear Cloud Data
+            if (window.CrazyManager) {
+                await window.CrazyManager.clearData('roboClickerElite');
+            }
+            
             localStorage.clear();
             sessionStorage.clear();
             location.reload();
@@ -3013,10 +3022,7 @@ class RoboClicker {
                     this.els.hero.style.transform = `scale(${0.95 + Math.random() * 0.1})`;
                 }
                 
-                // "AUTO" Text
-                if (Math.random() < 0.1) {
-                    this.spawnDamageNumber("AUTO!", centerX + (Math.random()*60-30), centerY - 60, '#5352ed');
-                }
+                // "AUTO" Text removed per user request (relying on Overlay)
             } else {
                 // Hide Overlay
                 if (this.els.botswarmOverlay) {
