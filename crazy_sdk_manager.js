@@ -186,6 +186,27 @@ class CrazySDKManager {
     }
 
     /**
+     * Completely resets game progress (Cloud + Local) and reloads.
+     * @param {string} key - The save key (e.g. 'roboClickerElite')
+     */
+    async resetProgress(key) {
+        // 1. Ensure Initialization
+        await this.init();
+        
+        // 2. Clear Cloud Data
+        await this.clearData(key);
+        
+        // 3. Clear Local Storage
+        localStorage.removeItem(key);
+        localStorage.clear(); // Nuclear option
+        sessionStorage.clear();
+        
+        // 4. Reload
+        this.log("Progress Reset Complete. Reloading...");
+        window.location.reload();
+    }
+
+    /**
      * Get User Token for backend verification.
      * @returns {string|null} Token or null
      */
