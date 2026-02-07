@@ -255,25 +255,9 @@ class RoboClicker {
             // Request responsive banners for both slots
             window.CrazyManager.requestResponsiveBanner('banner-container-top');
             window.CrazyManager.requestResponsiveBanner('banner-container-bottom');
-        }
-
-        // --- Remove Loading Screen (Smooth Fade) ---
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            // Wait a bit to ensure assets are ready and user sees the screen
-            setTimeout(() => {
-                loadingScreen.style.opacity = '0';
-                loadingScreen.style.transform = 'scale(1.1)'; // Slight pop out effect
-                setTimeout(() => {
-                    loadingScreen.remove();
-                    
-                    // --- NEW: Signal Loading Stop to SDK ---
-                    if (window.CrazyManager) {
-                        window.CrazyManager.loadingStop();
-                    }
-                    
-                }, 1000); // 1 second smooth fade
-            }, 500); // Min visibility time
+            
+            // Signal Loading Stop Immediately (No Loading Screen)
+            window.CrazyManager.loadingStop();
         }
     }
     
