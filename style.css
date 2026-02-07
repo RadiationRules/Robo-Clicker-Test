@@ -99,6 +99,34 @@ body {
     justify-content: center;
 }
 
+/* BANNER ADS */
+.banner-container-top {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 728px; height: 90px;
+    z-index: 50; /* Below modals (1000) but above game bg */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* Let clicks pass through if empty */
+}
+.banner-container-top > * { pointer-events: auto; } /* Re-enable for ad */
+
+@media (max-width: 768px) {
+    .banner-container-top {
+        width: 320px; height: 50px;
+    }
+}
+
+.banner-container-bottom {
+    /* Styles inline in HTML or here if needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
 /* --- Animated Background --- */
 .animated-bg {
     position: fixed;

@@ -250,6 +250,11 @@ class RoboClicker {
         // Signal Gameplay Start to SDK
         if (window.CrazyManager) {
             window.CrazyManager.gameplayStart();
+            
+            // --- NEW: Request Banners ---
+            // Request responsive banners for both slots
+            window.CrazyManager.requestResponsiveBanner('banner-container-top');
+            window.CrazyManager.requestResponsiveBanner('banner-container-bottom');
         }
 
         // --- Remove Loading Screen (Smooth Fade) ---
@@ -261,6 +266,12 @@ class RoboClicker {
                 loadingScreen.style.transform = 'scale(1.1)'; // Slight pop out effect
                 setTimeout(() => {
                     loadingScreen.remove();
+                    
+                    // --- NEW: Signal Loading Stop to SDK ---
+                    if (window.CrazyManager) {
+                        window.CrazyManager.loadingStop();
+                    }
+                    
                 }, 1000); // 1 second smooth fade
             }, 500); // Min visibility time
         }
@@ -2811,6 +2822,8 @@ class RoboClicker {
         if (evoClaimBtn) {
             evoClaimBtn.addEventListener('click', () => {
                 this.toggleModal('evolution-modal', false);
+                // Happy Time! (Evolution Complete)
+                if (window.CrazyManager) window.CrazyManager.happytime();
             });
         }
 

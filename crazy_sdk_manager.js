@@ -66,6 +66,115 @@ class CrazySDKManager {
     }
 
     /**
+     * Signal to SDK that loading has finished.
+     */
+    loadingStop() {
+        if (!this.checkInit()) return;
+        if (this.mockMode) {
+            this.log("Mock Mode: Loading Stop");
+            return;
+        }
+        try {
+            this.sdk.game.loadingStop();
+            this.log("Loading Stopped");
+        } catch (e) {
+            this.error("loadingStop error:", e);
+        }
+    }
+
+    /**
+     * Signal a 'Happy Time' event (e.g. level up, boss defeat).
+     */
+    happytime() {
+        if (!this.checkInit()) return;
+        if (this.mockMode) {
+            this.log("Mock Mode: Happy Time!");
+            return;
+        }
+        try {
+            this.sdk.game.happytime();
+            this.log("Happy Time Sent");
+        } catch (e) {
+            this.error("happytime error:", e);
+        }
+    }
+
+    /**
+     * Request a Standard Banner Ad.
+     * @param {string} containerId - The ID of the div to place the banner in.
+     */
+    async requestBanner(containerId) {
+        if (!this.checkInit()) return;
+        
+        if (this.mockMode) {
+            this.log(`Mock Mode: Requested Banner in #${containerId}`);
+            const el = document.getElementById(containerId);
+            if (el) {
+                el.style.background = "#333";
+                el.style.color = "#fff";
+                el.style.display = "flex";
+                el.style.alignItems = "center";
+                el.style.justifyContent = "center";
+                el.textContent = "MOCK BANNER AD (728x90 or 300x250)";
+            }
+            return;
+        }
+
+        try {
+            await this.sdk.banner.requestBanner({
+                id: containerId,
+                width: 728, // Default Standard
+                height: 90,
+            });
+            this.log(`Requested Banner for ${containerId}`);
+        } catch (e) {
+            this.error("requestBanner error:", e);
+        }
+    }
+
+    /**
+     * Request a Responsive Banner Ad (Best for Mobile/Desktop hybrid).
+     * @param {string} containerId 
+     */
+    async requestResponsiveBanner(containerId) {
+        if (!this.checkInit()) return;
+
+        if (this.mockMode) {
+            this.log(`Mock Mode: Requested Responsive Banner in #${containerId}`);
+            const el = document.getElementById(containerId);
+            if (el) {
+                el.style.background = "#444";
+                el.textContent = "MOCK RESPONSIVE BANNER";
+            }
+            return;
+        }
+
+        try {
+            await this.sdk.banner.requestResponsiveBanner(containerId);
+            this.log(`Requested Responsive Banner for ${containerId}`);
+        } catch (e) {
+            this.error("requestResponsiveBanner error:", e);
+        }
+    }
+
+    /**
+     * Clear all banners from the screen.
+     */
+    clearAllBanners() {
+        if (!this.checkInit()) return;
+        if (this.mockMode) {
+            this.log("Mock Mode: Cleared All Banners");
+            return;
+        }
+        try {
+            this.sdk.banner.clearAllBanners();
+            this.log("Cleared All Banners");
+        } catch (e) {
+            this.error("clearAllBanners error:", e);
+        }
+    }
+
+    /**
      * Request a Rewarded Ad.
      * @param {Object} callbacks - { adStarted, adFinished, adError }
      */
