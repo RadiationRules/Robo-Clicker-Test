@@ -195,19 +195,14 @@ class RoboClicker {
     async init() {
         console.log("Initializing Robo Clicker Elite...");
 
-        // --- CrazyGames SDK Initialization ---
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            try {
-                await window.CrazyGames.SDK.init();
-                console.log("CrazyGames SDK Initialized");
-
-                // --- Ad Block Detection ---
-                const hasAdblock = await window.CrazyGames.SDK.ad.hasAdblock();
-                if (hasAdblock) {
-                    console.warn("Adblock detected!");
-                }
-            } catch (e) {
-                console.error("SDK Init Error:", e);
+        // --- CrazyGames SDK Manager Initialization ---
+        if (window.CrazyManager) {
+            await window.CrazyManager.init();
+            
+            // Ad Block Check
+            const hasAdblock = await window.CrazyManager.hasAdblock();
+            if (hasAdblock) {
+                console.warn("Adblock detected!");
             }
         }
         
@@ -225,9 +220,7 @@ class RoboClicker {
         window.addEventListener('click', resumeAudio);
         window.addEventListener('touchstart', resumeAudio);
 
-        this.loadGame();
-        
-
+        await this.loadGame();
         
         // Initialize Tasks Data if missing
         this.initTasks();
@@ -252,6 +245,11 @@ class RoboClicker {
         // Tutorial Check
         if (this.gameState.totalBotsDeployed === 0) {
             this.initTutorial();
+        }
+        
+        // Signal Gameplay Start to SDK
+        if (window.CrazyManager) {
+            window.CrazyManager.gameplayStart();
         }
 
         // --- Remove Loading Screen (Animated Pop-Out) ---
@@ -1393,20 +1391,17 @@ class RoboClicker {
         // 1. Close Modal
         this.toggleModal('rebirth-modal', false);
 
-        // 2. Trigger Midgame Ad (Interstitial)
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            window.CrazyGames.SDK.ad.requestAd('midgame', {
+        // 2. Trigger Midgame Ad (Interstitial) via CrazyManager
+        if (window.CrazyManager) {
+            window.CrazyManager.showMidgameAd({
                 adStarted: () => {
-                    console.log("Rebirth Ad Started");
                     this.stopGameplay();
                 },
                 adFinished: () => {
-                    console.log("Rebirth Ad Finished");
                     this.resumeGameplay();
                     this.triggerRebirthSequence();
                 },
                 adError: (error) => {
-                    console.warn("Rebirth Ad Error:", error);
                     this.resumeGameplay();
                     this.triggerRebirthSequence();
                 }
@@ -2259,35 +2254,23 @@ class RoboClicker {
         this.adManager.requestedType = type;
         console.log(`[AdManager] Requesting ad for: ${type}`);
         
-        // CrazyGames SDK Ad Request
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            try {
-                window.CrazyGames.SDK.ad.requestAd('rewarded', {
-                    adStarted: () => {
-                        console.log("[AdManager] Ad Started");
-                        this.stopGameplay();
-                    },
-                    adFinished: () => {
-                        console.log("[AdManager] Ad Finished - Granting Reward");
-                        // Grant Reward FIRST to ensure user gets it even if resume fails
-                        this.grantReward(type);
-                        this.resumeGameplay();
-                        if (callbacks.onFinish) callbacks.onFinish();
-                    },
-                    adError: (error) => {
-                        console.warn("[AdManager] Ad Error:", error);
-                        this.resumeGameplay();
-                        
-                        // Friendly error message
-                        alert("Ad failed to load. Please try again later.");
-                        if (callbacks.onError) callbacks.onError(error);
-                    }
-                });
-            } catch (err) {
-                console.error("[AdManager] SDK Request Exception:", err);
-                this.resumeGameplay(); // Ensure game continues
-                alert("An error occurred while loading the ad.");
-            }
+        // Use CrazySDKManager
+        if (window.CrazyManager) {
+            window.CrazyManager.showRewardedAd({
+                adStarted: () => {
+                    this.stopGameplay(); // Game-specific pause logic (audio)
+                },
+                adFinished: () => {
+                    this.grantReward(type);
+                    this.resumeGameplay();
+                    if (callbacks.onFinish) callbacks.onFinish();
+                },
+                adError: (error) => {
+                    this.resumeGameplay();
+                    alert("Ad failed to load. Please try again later.");
+                    if (callbacks.onError) callbacks.onError(error);
+                }
+            });
         } else {
             // Dev Fallback
             console.log("Dev Mode: Ad Watched (No SDK)");
@@ -2308,13 +2291,7 @@ class RoboClicker {
         if (this.audioCtx && this.audioCtx.state === 'running') {
             this.audioCtx.suspend();
         }
-        
-        // SDK Gameplay Stop
-        if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
-            try {
-                window.CrazyGames.SDK.game.gameplayStop();
-            } catch (e) { console.warn("SDK Stop Error", e); }
-        }
+        // CrazyManager handles SDK gameplayStop
     }
 
     resumeGameplay() {
@@ -2322,13 +2299,7 @@ class RoboClicker {
         if (this.audioCtx && this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
-        
-        // SDK Gameplay Start
-        if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
-            try {
-                window.CrazyGames.SDK.game.gameplayStart();
-            } catch (e) { console.warn("SDK Start Error", e); }
-        }
+        // CrazyManager handles SDK gameplayStart
     }
 
     startAdCooldown(type) {
@@ -3194,97 +3165,127 @@ class RoboClicker {
 
     startAutoSave() { setInterval(() => this.saveGame(), 30000); }
     
-    saveGame() {
+    async saveGame() {
         if (this.isHardReset) return;
         this.gameState.lastSave = Date.now();
-        localStorage.setItem('roboClickerElite', JSON.stringify(this.gameState));
+        const json = JSON.stringify(this.gameState);
+        localStorage.setItem('roboClickerElite', json);
+        
+        // Cloud Save via Manager
+        if (window.CrazyManager) {
+            await window.CrazyManager.saveData('roboClickerElite', this.gameState);
+        }
     }
 
-    loadGame() {
-        const save = localStorage.getItem('roboClickerElite');
+    async loadGame() {
+        let save = localStorage.getItem('roboClickerElite');
+        
+        // Cloud Load via Manager
+        if (window.CrazyManager) {
+            try {
+                const cloudData = await window.CrazyManager.loadData('roboClickerElite');
+                if (cloudData) {
+                    const localData = save ? JSON.parse(save) : null;
+                    
+                    // Use Cloud if Local is missing OR Cloud is newer
+                    if (!localData || (cloudData.lastSave > (localData.lastSave || 0))) {
+                        console.log("Using Cloud Save");
+                        // We already have the object, so we can use it directly or stringify to match existing logic
+                        // Let's use it directly to avoid double parse
+                        this.processSaveData(cloudData);
+                        return; 
+                    } else {
+                        console.log("Using Local Save (Newer)");
+                    }
+                }
+            } catch (e) {
+                console.error("Cloud Load Error:", e);
+            }
+        }
+
         if (save) {
             try {
                 const data = JSON.parse(save);
-                
-                // Preserve default upgrades structure to ensure we have all keys
-                const defaultUpgrades = JSON.parse(JSON.stringify(this.gameState.upgrades));
-                
-                // Merge basic state
-                this.gameState = { ...this.gameState, ...data };
-                
-                // --- ROBUST STATE RECOVERY ---
-                
-                // 1. Upgrades Recovery
-                if (!this.gameState.upgrades) this.gameState.upgrades = defaultUpgrades;
-                else {
-                    // Ensure all default keys exist
-                    for (const key in defaultUpgrades) {
-                        if (!this.gameState.upgrades[key]) {
-                            this.gameState.upgrades[key] = defaultUpgrades[key];
-                        } else {
-                            // Ensure structure (level, basePower, etc) is preserved
-                            const saved = this.gameState.upgrades[key];
-                            const def = defaultUpgrades[key];
-                            this.gameState.upgrades[key] = { ...def, level: saved.level || 0 };
-                        }
-                    }
-                    
-                    // Cleanup removed upgrades (Strict Mode)
-                    const allowedKeys = Object.keys(defaultUpgrades);
-                    for (const key in this.gameState.upgrades) {
-                        if (!allowedKeys.includes(key)) {
-                            delete this.gameState.upgrades[key];
-                        }
-                    }
-                    
-                    // Migration: crit_chance -> crit_money
-                    if (data.upgrades && data.upgrades['crit_chance']) {
-                        this.gameState.upgrades['crit_money'].level = data.upgrades['crit_chance'].level;
-                    }
-                }
-
-                // 2. Evolution Recovery
-                if (!this.gameState.evolution) {
-                    this.gameState.evolution = { stage: 0, xp: 0, maxXp: 150 };
-                }
-                if (!this.gameState.unlockedRobots || !Array.isArray(this.gameState.unlockedRobots)) {
-                    this.gameState.unlockedRobots = [0];
-                }
-
-                // 3. Tasks Recovery
-                if (!this.gameState.tasks) this.gameState.tasks = {};
-
-                // 4. Prestige Recovery
-                if (!this.gameState.prestige) {
-                    this.gameState.prestige = {
-                        points: 0,
-                        totalResetCount: 0,
-                        claimedPoints: 0,
-                        upgrades: {}
-                    };
-                }
-
-                // 5. Gem Shop Recovery
-                if (!this.gameState.gemUpgrades) this.gameState.gemUpgrades = {};
-
-                // 6. Settings Recovery
-                if (this.gameState.settings) {
-                    if (this.els.sfxSlider) this.els.sfxSlider.value = this.gameState.settings.sfxVolume || 100;
-                    if (this.els.musicSlider) this.els.musicSlider.value = this.gameState.settings.musicVolume || 50;
-                }
-
-                // 7. Drones Visual Recovery
-                if (this.gameState.drones && Array.isArray(this.gameState.drones) && this.gameState.drones.length > 0) {
-                    this.renderFlyingDrones();
-                } else {
-                    this.gameState.drones = [];
-                }
-                
+                this.processSaveData(data);
             } catch (e) {
                 console.error("Save File Corrupted:", e);
-                // Optional: Force reset if totally broken?
-                // For now, let it fall back to default state where possible
             }
+        }
+    }
+
+    processSaveData(data) {
+        // Preserve default upgrades structure to ensure we have all keys
+        const defaultUpgrades = JSON.parse(JSON.stringify(this.gameState.upgrades));
+        
+        // Merge basic state
+        this.gameState = { ...this.gameState, ...data };
+        
+        // --- ROBUST STATE RECOVERY ---
+        
+        // 1. Upgrades Recovery
+        if (!this.gameState.upgrades) this.gameState.upgrades = defaultUpgrades;
+        else {
+            // Ensure all default keys exist
+            for (const key in defaultUpgrades) {
+                if (!this.gameState.upgrades[key]) {
+                    this.gameState.upgrades[key] = defaultUpgrades[key];
+                } else {
+                    // Ensure structure (level, basePower, etc) is preserved
+                    const saved = this.gameState.upgrades[key];
+                    const def = defaultUpgrades[key];
+                    this.gameState.upgrades[key] = { ...def, level: saved.level || 0 };
+                }
+            }
+            
+            // Cleanup removed upgrades (Strict Mode)
+            const allowedKeys = Object.keys(defaultUpgrades);
+            for (const key in this.gameState.upgrades) {
+                if (!allowedKeys.includes(key)) {
+                    delete this.gameState.upgrades[key];
+                }
+            }
+            
+            // Migration: crit_chance -> crit_money
+            if (data.upgrades && data.upgrades['crit_chance']) {
+                this.gameState.upgrades['crit_money'].level = data.upgrades['crit_chance'].level;
+            }
+        }
+
+        // 2. Evolution Recovery
+        if (!this.gameState.evolution) {
+            this.gameState.evolution = { stage: 0, xp: 0, maxXp: 150 };
+        }
+        if (!this.gameState.unlockedRobots || !Array.isArray(this.gameState.unlockedRobots)) {
+            this.gameState.unlockedRobots = [0];
+        }
+
+        // 3. Tasks Recovery
+        if (!this.gameState.tasks) this.gameState.tasks = {};
+
+        // 4. Prestige Recovery
+        if (!this.gameState.prestige) {
+            this.gameState.prestige = {
+                points: 0,
+                totalResetCount: 0,
+                claimedPoints: 0,
+                upgrades: {}
+            };
+        }
+
+        // 5. Gem Shop Recovery
+        if (!this.gameState.gemUpgrades) this.gameState.gemUpgrades = {};
+
+        // 6. Settings Recovery
+        if (this.gameState.settings) {
+            if (this.els.sfxSlider) this.els.sfxSlider.value = this.gameState.settings.sfxVolume || 100;
+            if (this.els.musicSlider) this.els.musicSlider.value = this.gameState.settings.musicVolume || 50;
+        }
+
+        // 7. Drones Visual Recovery
+        if (this.gameState.drones && Array.isArray(this.gameState.drones) && this.gameState.drones.length > 0) {
+            this.renderFlyingDrones();
+        } else {
+            this.gameState.drones = [];
         }
     }
 
