@@ -249,15 +249,16 @@ class RoboClicker {
         
         // Signal Gameplay Start to SDK
         if (window.CrazyManager) {
+            // 1. Stop Loading (Assets loaded)
+            window.CrazyManager.loadingStop();
+            
+            // 2. Start Gameplay
             window.CrazyManager.gameplayStart();
             
             // --- NEW: Request Banners ---
             // Request responsive banners for both slots
             window.CrazyManager.requestResponsiveBanner('banner-container-top');
             window.CrazyManager.requestResponsiveBanner('banner-container-bottom');
-            
-            // Signal Loading Stop Immediately (No Loading Screen)
-            window.CrazyManager.loadingStop();
         }
     }
     
