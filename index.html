@@ -273,10 +273,19 @@
 
             async resetProgress(key) {
                 await this.init();
+                
+                // 1. Clear Cloud Data (Wait for it)
                 await this.clearData(key);
+                
+                // 2. Clear Local Storage
                 localStorage.removeItem(key);
                 localStorage.clear();
                 sessionStorage.clear();
+                
+                // 3. IMPORTANT: Wait slightly to ensure cloud propagation/local clearing
+                // Some browsers might race condition the reload before storage is fully wiped
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 this.log("Progress Reset Complete. Reloading...");
                 window.location.reload();
             }

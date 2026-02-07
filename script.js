@@ -199,6 +199,9 @@ class RoboClicker {
         if (window.CrazyManager) {
             await window.CrazyManager.init();
             
+            // Force a small delay to ensure SDK Init event is logged first
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             // Ad Block Check
             const hasAdblock = await window.CrazyManager.hasAdblock();
             if (hasAdblock) {
