@@ -1,7 +1,314 @@
 <!-- CrazyGames SDK -->
     <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
-    <!-- CrazyGames SDK Manager Wrapper -->
-    <script src="crazy_sdk_manager.js"></script>
+    <!-- CrazyGames SDK Manager Wrapper (Embedded) -->
+    <script>
+        /**
+         * CrazyGames SDK v3 Manager
+         * Wraps SDK functionality for production-ready implementation.
+         */
+        class CrazySDKManager {
+            constructor() {
+                this.sdk = null;
+                this.isInitialized = false;
+                this.debug = true;
+            }
+
+            async init() {
+                if (this.isInitialized) return true;
+
+                // Poll for SDK presence (up to 2 seconds)
+                let attempts = 0;
+                while ((!window.CrazyGames || !window.CrazyGames.SDK) && attempts < 20) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
+                if (!window.CrazyGames || !window.CrazyGames.SDK) {
+                    this.log("CrazyGames SDK not found after polling. Enabling Mock Mode.");
+                    this.mockMode = true;
+                    this.isInitialized = true;
+                    return true;
+                }
+
+                try {
+                    await window.CrazyGames.SDK.init();
+                    this.sdk = window.CrazyGames.SDK;
+                    this.isInitialized = true;
+                    this.log("SDK Initialized successfully.");
+                    return true;
+                } catch (error) {
+                    this.error("SDK Initialization failed. Enabling Mock Mode.", error);
+                    this.mockMode = true;
+                    this.isInitialized = true;
+                    return true;
+                }
+            }
+
+            gameplayStart() {
+                if (!this.checkInit()) return;
+                if (this.mockMode) return;
+                try {
+                    this.sdk.game.gameplayStart();
+                    this.log("Gameplay Started");
+                } catch (e) { this.error("gameplayStart error:", e); }
+            }
+
+            gameplayStop() {
+                if (!this.checkInit()) return;
+                if (this.mockMode) return;
+                try {
+                    this.sdk.game.gameplayStop();
+                    this.log("Gameplay Stopped");
+                } catch (e) { this.error("gameplayStop error:", e); }
+            }
+
+            loadingStop() {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log("Mock Mode: Loading Stop");
+                    return;
+                }
+                try {
+                    this.sdk.game.loadingStop();
+                    this.log("Loading Stopped");
+                } catch (e) { this.error("loadingStop error:", e); }
+            }
+
+            happytime() {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log("Mock Mode: Happy Time!");
+                    return;
+                }
+                try {
+                    this.sdk.game.happytime();
+                    this.log("Happy Time Sent");
+                } catch (e) { this.error("happytime error:", e); }
+            }
+
+            async requestBanner(containerId) {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log(`Mock Mode: Requested Banner in #${containerId}`);
+                    const el = document.getElementById(containerId);
+                    if (el) {
+                        el.style.background = "#333";
+                        el.style.color = "#fff";
+                        el.style.display = "flex";
+                        el.style.alignItems = "center";
+                        el.style.justifyContent = "center";
+                        el.textContent = "MOCK BANNER AD (728x90 or 300x250)";
+                    }
+                    return;
+                }
+                try {
+                    await this.sdk.banner.requestBanner({ id: containerId, width: 728, height: 90 });
+                    this.log(`Requested Banner for ${containerId}`);
+                } catch (e) { this.error("requestBanner error:", e); }
+            }
+
+            async requestResponsiveBanner(containerId) {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log(`Mock Mode: Requested Responsive Banner in #${containerId}`);
+                    const el = document.getElementById(containerId);
+                    if (el) {
+                        el.style.background = "#444";
+                        el.textContent = "MOCK RESPONSIVE BANNER";
+                    }
+                    return;
+                }
+                try {
+                    await this.sdk.banner.requestResponsiveBanner(containerId);
+                    this.log(`Requested Responsive Banner for ${containerId}`);
+                } catch (e) { this.error("requestResponsiveBanner error:", e); }
+            }
+
+            clearAllBanners() {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log("Mock Mode: Cleared All Banners");
+                    return;
+                }
+                try {
+                    this.sdk.banner.clearAllBanners();
+                    this.log("Cleared All Banners");
+                } catch (e) { this.error("clearAllBanners error:", e); }
+            }
+
+            async showRewardedAd(callbacks = {}) {
+                if (!this.checkInit()) {
+                    if (callbacks.adError) callbacks.adError("SDK not initialized");
+                    return;
+                }
+                this.log("Requesting Rewarded Ad...");
+                if (this.mockMode) {
+                    this.log("Mock Mode: Simulating Ad...");
+                    if (callbacks.adStarted) callbacks.adStarted();
+                    setTimeout(() => {
+                        this.log("Mock Mode: Ad Finished");
+                        if (callbacks.adFinished) callbacks.adFinished();
+                    }, 1000);
+                    return;
+                }
+                try {
+                    await this.sdk.ad.requestAd('rewarded', {
+                        adStarted: () => {
+                            this.log("Ad Started");
+                            this.gameplayStop();
+                            if (callbacks.adStarted) callbacks.adStarted();
+                        },
+                        adFinished: () => {
+                            this.log("Ad Finished");
+                            this.gameplayStart();
+                            if (callbacks.adFinished) callbacks.adFinished();
+                        },
+                        adError: (error) => {
+                            this.error("Ad Error:", error);
+                            this.gameplayStart();
+                            if (callbacks.adError) callbacks.adError(error);
+                        }
+                    });
+                } catch (e) {
+                    this.error("showRewardedAd Exception:", e);
+                    this.gameplayStart();
+                    if (callbacks.adError) callbacks.adError(e);
+                }
+            }
+
+            async showMidgameAd(callbacks = {}) {
+                if (!this.checkInit()) return;
+                this.log("Requesting Midgame Ad...");
+                if (this.mockMode) {
+                    this.log("Mock Mode: Simulating Midgame Ad...");
+                    if (callbacks.adStarted) callbacks.adStarted();
+                    setTimeout(() => {
+                        this.log("Mock Mode: Ad Finished");
+                        if (callbacks.adFinished) callbacks.adFinished();
+                    }, 1000);
+                    return;
+                }
+                try {
+                    await this.sdk.ad.requestAd('midgame', {
+                        adStarted: () => {
+                            this.log("Midgame Ad Started");
+                            this.gameplayStop();
+                            if (callbacks.adStarted) callbacks.adStarted();
+                        },
+                        adFinished: () => {
+                            this.log("Midgame Ad Finished");
+                            this.gameplayStart();
+                            if (callbacks.adFinished) callbacks.adFinished();
+                        },
+                        adError: (error) => {
+                            this.error("Midgame Ad Error:", error);
+                            this.gameplayStart();
+                            if (callbacks.adError) callbacks.adError(error);
+                        }
+                    });
+                } catch (e) {
+                    this.error("showMidgameAd Exception:", e);
+                    this.gameplayStart();
+                    if (callbacks.adError) callbacks.adError(e);
+                }
+            }
+
+            async saveData(key, data) {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log(`Mock Mode: Saved data for key: ${key}`);
+                    return;
+                }
+                try {
+                    const json = JSON.stringify(data);
+                    await this.sdk.data.setItem(key, json);
+                    this.log(`Saved data for key: ${key}`);
+                } catch (e) { this.error("saveData error:", e); }
+            }
+
+            async loadData(key) {
+                if (!this.checkInit()) return null;
+                if (this.mockMode) {
+                    this.log(`Mock Mode: Load data for key: ${key} (returning null)`);
+                    return null;
+                }
+                try {
+                    const json = await this.sdk.data.getItem(key);
+                    if (json) {
+                        this.log(`Loaded data for key: ${key}`);
+                        return JSON.parse(json);
+                    }
+                    return null;
+                } catch (e) {
+                    this.error("loadData error:", e);
+                    return null;
+                }
+            }
+
+            async clearData(key) {
+                if (!this.checkInit()) return;
+                if (this.mockMode) {
+                    this.log(`Mock Mode: Cleared data for key: ${key}`);
+                    return;
+                }
+                try {
+                    await this.sdk.data.removeItem(key);
+                    this.log(`Cleared data for key: ${key}`);
+                } catch (e) { this.error("clearData error:", e); }
+            }
+
+            async resetProgress(key) {
+                await this.init();
+                await this.clearData(key);
+                localStorage.removeItem(key);
+                localStorage.clear();
+                sessionStorage.clear();
+                this.log("Progress Reset Complete. Reloading...");
+                window.location.reload();
+            }
+
+            async getUserToken() {
+                if (!this.checkInit()) return null;
+                if (this.mockMode) return "mock-token";
+                try {
+                    return await this.sdk.user.getUserToken();
+                } catch (e) {
+                    this.error("getUserToken error:", e);
+                    return null;
+                }
+            }
+
+            async hasAdblock() {
+                if (!this.checkInit()) return false;
+                if (this.mockMode) return false;
+                try {
+                    return await this.sdk.ad.hasAdblock();
+                } catch (e) {
+                    this.error("hasAdblock error:", e);
+                    return false;
+                }
+            }
+
+            checkInit() {
+                if (!this.isInitialized) {
+                    this.error("SDK not initialized. Call init() first.");
+                    return false;
+                }
+                return true;
+            }
+
+            log(...args) {
+                if (this.debug) console.log("[CrazyManager]", ...args);
+            }
+
+            error(...args) {
+                console.error("[CrazyManager]", ...args);
+            }
+        }
+
+        // Export singleton
+        window.CrazyManager = new CrazySDKManager();
+    </script>
     
     <!-- FontAwesome for Real Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
