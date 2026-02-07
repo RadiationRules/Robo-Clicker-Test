@@ -16,8 +16,16 @@ class CrazySDKManager {
     async init() {
         if (this.isInitialized) return true;
 
+        // Poll for SDK presence (up to 2 seconds)
+        // This handles cases where the SDK script loads async or slightly slower than the manager
+        let attempts = 0;
+        while ((!window.CrazyGames || !window.CrazyGames.SDK) && attempts < 20) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+
         if (!window.CrazyGames || !window.CrazyGames.SDK) {
-            this.log("CrazyGames SDK not found in window object. Enabling Mock Mode.");
+            this.log("CrazyGames SDK not found after polling. Enabling Mock Mode.");
             this.mockMode = true;
             this.isInitialized = true;
             return true;
