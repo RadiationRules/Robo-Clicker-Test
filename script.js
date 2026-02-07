@@ -261,11 +261,11 @@ class RoboClicker {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
                     loadingScreen.remove();
-                }, 200); // Super fast fade out
+                }, 100); // Even faster fade out
             }
         };
         // Run immediately
-        setTimeout(removeLoading, 100); 
+        setTimeout(removeLoading, 50); 
     }
     
     initTasks() {
@@ -632,6 +632,14 @@ class RoboClicker {
         // Set rotation to point at robot
         laser.style.transform = `rotate(${angle}deg)`;
         
+        // MEGA DRONE: Blue Laser
+        const isMega = droneEl.classList.contains('tier-mega');
+        if (isMega) {
+            laser.style.background = '#00ffff';
+            laser.style.boxShadow = '0 0 10px #00ffff';
+            laser.style.height = '4px'; // Thicker
+        }
+        
         droneEl.appendChild(laser);
         
         // Dynamic Animation via JS for exact distance
@@ -648,12 +656,33 @@ class RoboClicker {
         setTimeout(() => {
             const lvl = this.gameState.droneLevel || 1;
             // Damage scales: Exactly 200% of User Click Power per shot (2x Boost)
-            const baseDamage = Math.max(10, this.getClickPower() * this.getGlobalMultiplier() * 2);
+            let baseDamage = Math.max(10, this.getClickPower() * this.getGlobalMultiplier() * 2);
             
+            // MEGA DRONE: Massive Damage Bonus (50x) - Persists through Rebirth
+            if (isMega) {
+                baseDamage *= 50;
+            }
+            
+            // --- NEW: DRONE CRITICAL HITS ---
+            const critUpgrade = this.gameState.upgrades['crit_money'] || { level: 0, basePower: 0 }; 
+            const critChance = (critUpgrade.level * critUpgrade.basePower) / 100;
+            const isCrit = Math.random() < critChance;
+            
+            if (isCrit) {
+                baseDamage *= 2; // Critical Hit Multiplier
+                this.spawnCriticalPopup(robotX, robotY);
+            }
+
             this.addMoney(baseDamage);
             
-            // Visual Impact on Robot
+            // --- NEW: FULL VISUAL FEEDBACK (Same as Click) ---
+            // 1. Flying Money
+            this.spawnMoneyParticle(baseDamage, robotX, robotY);
+            
+            // 2. Bolt Particles
             this.spawnBoltParticle(robotX, robotY);
+            
+            // 3. Robot Bounce
             this.animateHero();
             
         }, 100);
@@ -1560,7 +1589,8 @@ class RoboClicker {
              const cost = this.getRebirthCost();
              const canAfford = this.gameState.money >= cost;
              
-             this.els.rebirthBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> REBIRTH <span class="rebirth-cost">$${this.formatNumber(cost)}</span>`;
+             // Removed icon as per request
+             this.els.rebirthBtn.innerHTML = `REBIRTH <span class="rebirth-cost">$${this.formatNumber(cost)}</span>`;
              
              // Always show Rebirth button as per user request
              this.els.rebirthBtn.style.display = 'block';
@@ -2430,7 +2460,16 @@ class RoboClicker {
             // Calculate earnings
             // 1. Drones (Main source since Auto Upgrades removed)
             const droneLvl = this.gameState.droneLevel || 1;
-            const droneCount = this.gameState.drones ? this.gameState.drones.length : 0;
+            const allDrones = this.gameState.drones || [];
+            
+            let regularCount = 0;
+            let megaCount = 0;
+            
+            allDrones.forEach(d => {
+                if (d.tier === 'mega') megaCount++;
+                else regularCount++;
+            });
+
             const clickPower = this.getClickPower();
             
             // Avg Shots Per Sec: (0.1 + lvl*0.02) * 10 (ticks)
@@ -2439,9 +2478,12 @@ class RoboClicker {
             const shotsPerSec = fireChance * 10;
             
             // Damage Per Shot: 200% Click Power (2x User Click)
-            const dmgPerShot = Math.max(10, clickPower * 2);
+            const baseDmg = Math.max(10, clickPower * 2);
             
-            const droneIncomePerSec = droneCount * shotsPerSec * dmgPerShot;
+            const regularIncome = regularCount * shotsPerSec * baseDmg;
+            const megaIncome = megaCount * shotsPerSec * (baseDmg * 50); // 50x for Mega
+            
+            const droneIncomePerSec = regularIncome + megaIncome;
 
             // 2. Multipliers
             // We use getGlobalMultiplier() but we need to exclude TEMPORARY boosts like Turbo
@@ -2519,26 +2561,26 @@ class RoboClicker {
             
             el.className = `day-card-infinite ${stateClass} type-${rewardType}`;
             
-            let iconHtml = '<i class="fa-solid fa-coins"></i>';
+            // NEW: Gift Icon System
+            let iconHtml = '<i class="fa-solid fa-gift"></i>';
             let label = `$${this.formatNumber(val)}`;
             
-            if (rewardType === 'buff_speed') { iconHtml = '<i class="fa-solid fa-bolt"></i>'; label = '2x SPD'; }
-            if (rewardType === 'buff_luck') { iconHtml = '<i class="fa-solid fa-clover"></i>'; label = 'LUCKY'; }
-            if (rewardType === 'big_cash') { iconHtml = '<i class="fa-solid fa-sack-dollar"></i>'; label = 'JACKPOT'; }
+            if (rewardType === 'buff_speed') { 
+                iconHtml = '<i class="fa-solid fa-gift" style="color: #00ffff;"></i>'; // Cyan Gift
+                label = '2x SPD'; 
+            }
+            if (rewardType === 'big_cash') { 
+                iconHtml = '<i class="fa-solid fa-gifts" style="color: #FFD700;"></i>'; // Gold Gifts
+                label = 'JACKPOT'; 
+            }
             
             // Special Visuals for the Claimable Reward
             if (isCurrent && isClaimable) {
-                 iconHtml = `
-                    <div class="gift-box-visual">
-                        <div class="gift-lid"></div>
-                        <div class="gift-box-body"></div>
-                        <div class="gift-bow"></div>
-                    </div>
-                 `;
+                 iconHtml = '<i class="fa-solid fa-box-open fa-bounce" style="color: #00ff00;"></i>'; // Green Open Box
                  label = "OPEN ME!";
             } else if (isCurrent && !isClaimable) {
-                // Locked/Waiting state - Show value instead of WAIT
-                // label remains as set above (e.g. $500)
+                // Locked/Waiting state
+                iconHtml = '<i class="fa-solid fa-lock"></i>';
             }
             
             el.innerHTML = `
@@ -2594,15 +2636,16 @@ class RoboClicker {
         
         const productionScale = basePower; // Already derived from 1 min of production
         
-        // 25% of current cash as baseline for daily reward (BUFFED)
-        const cashScale = this.gameState.money * 0.25;
+        // 50% of current cash as baseline for daily reward (MEGA BUFFED)
+        const cashScale = this.gameState.money * 0.50;
         
         const baseValue = Math.max(productionScale, cashScale);
         
-        // Ensure minimum 100
-        const finalBase = Math.max(100, baseValue);
+        // Ensure minimum 500
+        const finalBase = Math.max(500, baseValue);
 
-        const streakBonus = 1 + (dayIndex * 0.15); 
+        // Stronger Streak Bonus: 25% per day instead of 15%
+        const streakBonus = 1 + (dayIndex * 0.25); 
         
         if ((dayIndex + 1) % 6 === 0) return Math.floor(finalBase * 5 * streakBonus); // Jackpot (5x)
         return Math.floor(finalBase * streakBonus); // Regular

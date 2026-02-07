@@ -1351,7 +1351,8 @@ body {
     border-top: 4px solid #e056fd; /* Pink Border */
     color: rgba(255, 255, 255, 0.6); /* Dimmed Text */
     font-size: 1.6rem;
-    padding: 30px 20px;
+    padding: 0; /* Remove default padding for flex centering */
+    height: 100px; /* Fixed height for consistent layout */
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
@@ -1362,21 +1363,16 @@ body {
     font-weight: 900;
     cursor: not-allowed;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Horizontally center */
+    align-items: center; /* Vertically center */
     gap: 15px;
     z-index: 1;
     opacity: 0.8;
 }
 
+/* Hide Icon */
 .rebirth-trigger-btn i {
-    transition: transform 0.5s;
-    animation: spinRing 10s linear infinite; /* Always spin slowly */
-}
-
-@keyframes spinRing {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    display: none !important;
 }
 
 /* Animated Circle Ring - Adjusted Position */
@@ -2216,24 +2212,29 @@ body {
 
 /* Robot Eyes - Friendly Circular */
 .robot-eyes {
-    display: none !important;
+    display: flex !important; /* FORCE VISIBLE */
     gap: 15px;
-    z-index: 5;
+    z-index: 100; /* Ensure on top */
     animation: lookAround 5s infinite alternate;
+    justify-content: center;
+    align-items: center;
+    width: 100%; height: 100%;
+    position: relative; /* Fix for absolute children */
 }
 
 .eye {
-    width: 28px; height: 28px; /* Circular */
+    width: 22px; height: 22px; /* Slightly smaller to fit */
     background: #00f2fe; /* Neon Cyan */
     border-radius: 50%;
-    box-shadow: 0 0 15px #00f2fe, 0 0 30px #4facfe; /* Strong Neon Glow */
+    box-shadow: 0 0 10px #00f2fe, 0 0 20px #4facfe; /* Strong Neon Glow */
     display: block;
+    position: relative; /* Not absolute */
     animation: blink 4s infinite;
 }
 
-/* Eye reflection removed for friendly look */
+/* Remove reflection per user request */
 .eye::after {
-    display: none;
+    display: none !important;
 }
 
 @keyframes lookAround {
@@ -2562,7 +2563,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9000; /* SUPER HIGH - Covers everything */
     backdrop-filter: blur(10px);
 }
 
@@ -2575,6 +2576,7 @@ body {
     box-shadow: 15px 15px 0 rgba(0,0,0,0.3);
     overflow: hidden;
     animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 9001; /* Ensure modal content is above overlay */
 }
 
 .modal-header {
@@ -3725,7 +3727,16 @@ body {
     .evo-visual-section {
         height: 250px;
         width: 100%;
+        overflow: hidden; /* Prevent oversize */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
+    /* Ensure robot fits inside the visual section */
+    .evo-visual-section .hero-robot {
+        transform: scale(0.6) !important; /* Force smaller scale on mobile */
+    }
+    
     .evo-info-section {
         width: 100%;
         align-items: center;
