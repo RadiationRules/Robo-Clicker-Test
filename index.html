@@ -1,19 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Robo Clicker</title>
-    
-    <!-- CrazyGames SDK -->
-    <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
+<!-- CrazyGames SDK -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
     <!-- FontAwesome for Real Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-</head>
-<body>
+
+
     <!-- LOADING SCREEN -->
     <div id="loading-screen">
         <div class="loading-bg-pattern"></div>
@@ -57,10 +50,6 @@
                     <span class="icon-sm"><i class="fa-solid fa-arrow-pointer"></i></span>
                     <span id="bot-value-stat">1</span>
                 </div>
-                <div class="stat-pill">
-                    <span class="icon-sm"><i class="fa-solid fa-robot"></i></span>
-                    <span id="total-bots-stat">0</span> Bots
-                </div>
             </div>
 
             <div class="hud-controls">
@@ -88,6 +77,12 @@
                 <div id="turbo-overlay" class="hidden">
                     <div class="turbo-text">TURBO MODE</div>
                     <div class="turbo-timer" id="turbo-timer">00:00</div>
+                </div>
+
+                <!-- BOTSWARM OVERLAY UI -->
+                <div id="botswarm-overlay" class="hidden">
+                    <div class="botswarm-text">BOT SWARM</div>
+                    <div class="botswarm-timer" id="botswarm-timer">00:00</div>
                 </div>
                 
                 <!-- Evolution Gauge - Addictive Design -->
@@ -437,5 +432,3 @@
     <!-- Daily Reward Button Moved to HUD -->
     
     <script src="script.js"></script>
-</body>
-</html>

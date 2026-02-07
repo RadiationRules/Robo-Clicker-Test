@@ -254,16 +254,18 @@ class RoboClicker {
             this.initTutorial();
         }
 
-        // --- Remove Loading Screen ---
-        setTimeout(() => {
+        // --- Remove Loading Screen (QUICK FIX) ---
+        const removeLoading = () => {
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
                     loadingScreen.remove();
-                }, 1000); // Wait for fade out
+                }, 200); // Super fast fade out
             }
-        }, 2000); // Show for at least 2 seconds
+        };
+        // Run immediately
+        setTimeout(removeLoading, 100); 
     }
     
     initTasks() {
@@ -384,7 +386,7 @@ class RoboClicker {
             currencyContainer: document.getElementById('money-display-container'),
             botValue: document.getElementById('bot-value-stat'), // Now Click Value
             multiplierStat: document.getElementById('multiplier-stat'), // New Multiplier Display
-            totalBots: document.getElementById('total-bots-stat'),
+            // totalBots removed
             
             hero: document.getElementById('hero-robot'),
             fusionFill: document.getElementById('fusion-fill'), // Now Evolution Fill
@@ -557,15 +559,23 @@ class RoboClicker {
         
         container.innerHTML = '';
         
+        // Slot System to prevent overlap (Max 5 drones)
+        // Y-Percentages for 5 distinct vertical slots
+        const slots = [20, 32, 44, 56, 68];
+        // Shuffle slots so they don't fill top-down every time
+        const shuffledSlots = slots.sort(() => Math.random() - 0.5);
+        
         this.gameState.drones.forEach((drone, index) => {
             const el = document.createElement('div');
             el.className = `flying-drone tier-${drone.tier}`;
             
-            // STRICT Positioning: LEFT SIDE ONLY (Boundary Box)
-            // Left: 5% to 35% (Avoids overlapping robot center/right)
-            // Top: 20% to 80% (Vertical Buffer)
-            const x = (5 + Math.random() * 30) + '%'; 
-            const y = (20 + Math.random() * 60) + '%'; 
+            // STRICT Positioning: LEFT SIDE ONLY
+            // Use slot if available, else fallback to random (safeguard)
+            const yBase = shuffledSlots[index] !== undefined ? shuffledSlots[index] : (20 + Math.random() * 50);
+            
+            // X is slightly random for organic feel but kept tight
+            const x = (5 + Math.random() * 15) + '%'; 
+            const y = yBase + '%'; 
             
             el.style.left = x;
             el.style.top = y;
@@ -573,23 +583,25 @@ class RoboClicker {
             // Random float delay for desync
             el.style.animationDelay = `${Math.random() * -5}s`;
             
-            // Inner visual
+            // Inner visual - SIMPLE NEON DESIGN (No Arms)
             const visual = document.createElement('div');
             visual.className = 'drone-visual';
             
-            // Add Sci-Fi Rings
-            const ring1 = document.createElement('div');
-            ring1.className = 'drone-ring';
-            const ring2 = document.createElement('div');
-            ring2.className = 'drone-ring-2';
+            // Core (Glowing Center)
+            const core = document.createElement('div');
+            core.className = 'drone-core-simple';
             
-            // Add Engine Flame
-            const engine = document.createElement('div');
-            engine.className = 'drone-engine';
+            // Energy Ring (Rotating)
+            const ring = document.createElement('div');
+            ring.className = 'drone-ring-simple';
+
+            // Glow Pulse
+            const glow = document.createElement('div');
+            glow.className = 'drone-glow-pulse';
             
-            visual.appendChild(ring1);
-            visual.appendChild(ring2);
-            visual.appendChild(engine);
+            visual.appendChild(glow);
+            visual.appendChild(ring);
+            visual.appendChild(core);
             
             el.appendChild(visual);
             container.appendChild(el);
@@ -635,8 +647,8 @@ class RoboClicker {
         // Damage & Impact Logic (Synced with hit)
         setTimeout(() => {
             const lvl = this.gameState.droneLevel || 1;
-            // Damage scales: Exactly 50% of User Click Power per shot
-            const baseDamage = Math.max(10, this.getClickPower() * 0.5);
+            // Damage scales: Exactly 200% of User Click Power per shot (2x Boost)
+            const baseDamage = Math.max(10, this.getClickPower() * this.getGlobalMultiplier() * 2);
             
             this.addMoney(baseDamage);
             
@@ -1425,14 +1437,18 @@ class RoboClicker {
             this.gameState.upgrades[key].level = 0;
         }
         
-        // Reset Drones
-        this.gameState.drones = [];
+        // Reset Drones - KEEP MEGA DRONES
+        if (this.gameState.drones) {
+             this.gameState.drones = this.gameState.drones.filter(d => d.tier === 'mega');
+        } else {
+             this.gameState.drones = [];
+        }
         this.gameState.droneLevel = 1;
         
-        // Reset Evolution
-        this.gameState.evolution.stage = 0;
-        this.gameState.evolution.xp = 0;
-        this.gameState.evolution.maxXp = 150;
+        // Reset Evolution - DISABLED per user request (Persistence)
+        // this.gameState.evolution.stage = 0;
+        // this.gameState.evolution.xp = 0;
+        // this.gameState.evolution.maxXp = 150;
         
         // Reset Heat
         this.heat = 0;
@@ -1673,7 +1689,7 @@ class RoboClicker {
              this.els.multiplierStat.textContent = `${this.formatNumber(mult)}x`;
         }
 
-        this.els.totalBots.textContent = this.formatNumber(this.gameState.totalBotsDeployed);
+        // this.els.totalBots.textContent = this.formatNumber(this.gameState.totalBotsDeployed);
     }
 
     updateFusionUI() {
@@ -2255,12 +2271,22 @@ class RoboClicker {
         if (this.audioCtx && this.audioCtx.state === 'running') {
             this.audioCtx.suspend();
         }
+        
+        // SDK Gameplay Stop
+        if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
+            window.CrazyGames.SDK.game.gameplayStop();
+        }
     }
 
     resumeGameplay() {
         // Unmute Audio
         if (this.audioCtx && this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
+        }
+        
+        // SDK Gameplay Start
+        if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
+            window.CrazyGames.SDK.game.gameplayStart();
         }
     }
 
@@ -2412,8 +2438,8 @@ class RoboClicker {
             if (fireChance > 0.6) fireChance = 0.6; // Cap
             const shotsPerSec = fireChance * 10;
             
-            // Damage Per Shot: 50% Click Power (Half of user click)
-            const dmgPerShot = Math.max(10, clickPower * 0.5);
+            // Damage Per Shot: 200% Click Power (2x User Click)
+            const dmgPerShot = Math.max(10, clickPower * 2);
             
             const droneIncomePerSec = droneCount * shotsPerSec * dmgPerShot;
 
@@ -2463,18 +2489,17 @@ class RoboClicker {
         if (timeSince > oneDay * 2) this.gameState.dailyStreak = 0;
 
         const currentStreak = this.gameState.dailyStreak;
+        const isClaimable = timeSince > oneDay;
         
-        // Base reward calculation - Scales with player's production capability
-        // Use 1 minute of total production (Active + Auto) as baseline
-        const productionPerSec = this.getAutoPower() + (this.getClickPower() * 2); // Assume 2 clicks/sec avg
+        // Base reward calculation
+        const productionPerSec = this.getAutoPower() + (this.getClickPower() * 2);
         const playerPower = Math.max(100, productionPerSec * 60);
         
         if (this.els.dailyGrid) {
             this.els.dailyGrid.innerHTML = '';
-            // this.els.dailyGrid.className = 'daily-scroll-container'; // Class already set in HTML
         }
 
-        // Show a window of days: previous 1, current, next 5 (More "infinite" feel)
+        // Show a window of days
         const startDay = currentStreak; 
         const numToShow = 5; 
 
@@ -2484,50 +2509,72 @@ class RoboClicker {
             const val = this.getDailyRewardValue(dayIndex, playerPower);
             
             const el = document.createElement('div');
-            // First card is always the active one to claim
             const isCurrent = (i === 0);
             
-            el.className = `day-card-infinite ${isCurrent ? 'active-day' : 'future-day'} type-${rewardType}`;
+            // Class determines styling
+            let stateClass = 'future-day';
+            if (isCurrent) {
+                stateClass = isClaimable ? 'active-ready' : 'active-locked';
+            }
             
-            let icon = '💵';
+            el.className = `day-card-infinite ${stateClass} type-${rewardType}`;
+            
+            let iconHtml = '<i class="fa-solid fa-coins"></i>';
             let label = `$${this.formatNumber(val)}`;
             
-            if (rewardType === 'buff_speed') { icon = '⚡'; label = '2x SPD'; }
-            if (rewardType === 'buff_luck') { icon = '🍀'; label = 'Lucky'; }
-            if (rewardType === 'big_cash') { icon = '💰'; label = 'JACKPOT'; }
+            if (rewardType === 'buff_speed') { iconHtml = '<i class="fa-solid fa-bolt"></i>'; label = '2x SPD'; }
+            if (rewardType === 'buff_luck') { iconHtml = '<i class="fa-solid fa-clover"></i>'; label = 'LUCKY'; }
+            if (rewardType === 'big_cash') { iconHtml = '<i class="fa-solid fa-sack-dollar"></i>'; label = 'JACKPOT'; }
+            
+            // Special Visuals for the Claimable Reward
+            if (isCurrent && isClaimable) {
+                 iconHtml = `
+                    <div class="gift-box-visual">
+                        <div class="gift-lid"></div>
+                        <div class="gift-box-body"></div>
+                        <div class="gift-bow"></div>
+                    </div>
+                 `;
+                 label = "OPEN ME!";
+            } else if (isCurrent && !isClaimable) {
+                // Locked/Waiting state - Show value instead of WAIT
+                // label remains as set above (e.g. $500)
+            }
             
             el.innerHTML = `
                 <div class="day-header">Day ${dayIndex + 1}</div>
-                <div class="day-icon-large">${icon}</div>
+                <div class="day-icon-large">${iconHtml}</div>
                 <div class="day-reward-text">${label}</div>
             `;
             if (this.els.dailyGrid) this.els.dailyGrid.appendChild(el);
         }
 
-        if (timeSince > oneDay) {
+        if (isClaimable) {
             if (this.els.claimDailyBtn) {
                 this.els.claimDailyBtn.disabled = false;
                 this.els.claimDailyBtn.textContent = "CLAIM REWARD";
+                this.els.claimDailyBtn.classList.add('pulse-btn-green');
             }
             if (this.els.dailyTimer) this.els.dailyTimer.classList.add('hidden');
             
-            // Only auto-open if requested
             if (autoOpen) {
                 this.toggleModal('daily-rewards-modal', true);
             }
             
-            // ALWAYS show notification badge if ready
             if (this.els.dailyBadge) this.els.dailyBadge.classList.remove('hidden');
             if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.add('pulse-btn');
             
         } else {
-            if (this.els.claimDailyBtn) this.els.claimDailyBtn.disabled = true;
+            if (this.els.claimDailyBtn) {
+                this.els.claimDailyBtn.disabled = true;
+                this.els.claimDailyBtn.textContent = "COME BACK LATER";
+                this.els.claimDailyBtn.classList.remove('pulse-btn-green');
+            }
             if (this.els.dailyTimer) {
                 this.els.dailyTimer.classList.remove('hidden');
                 this.updateDailyTimer();
             }
             
-            // Hide badge if not ready
             if (this.els.dailyBadge) this.els.dailyBadge.classList.add('hidden');
             if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.remove('pulse-btn');
         }
@@ -2547,10 +2594,8 @@ class RoboClicker {
         
         const productionScale = basePower; // Already derived from 1 min of production
         
-        // 5% of current cash as baseline for daily reward?
-        // Capped to avoid exploits if they hoard excessively, but "scaling" is requested.
-        // Let's use 10% of current cash as a strong baseline, or Production, whichever is higher.
-        const cashScale = this.gameState.money * 0.10;
+        // 25% of current cash as baseline for daily reward (BUFFED)
+        const cashScale = this.gameState.money * 0.25;
         
         const baseValue = Math.max(productionScale, cashScale);
         
@@ -2603,14 +2648,21 @@ class RoboClicker {
     // --- SETUP & UTILS ---
 
     setupEventListeners() {
-        const handleInteraction = (e) => {
-            e.preventDefault(); 
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            this.clickHero({ clientX, clientY });
-        };
-        this.els.hero.addEventListener('mousedown', handleInteraction);
-        this.els.hero.addEventListener('touchstart', handleInteraction);
+        // Mouse Interaction
+        this.els.hero.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            this.clickHero({ clientX: e.clientX, clientY: e.clientY });
+        });
+
+        // Touch Interaction (Multi-touch support)
+        this.els.hero.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop zoom/scroll
+            // Process ALL changed touches (new fingers touching down)
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                this.clickHero({ clientX: t.clientX, clientY: t.clientY });
+            }
+        }, { passive: false });
 
         // Spacebar Support
         window.addEventListener('keydown', (e) => {
@@ -2873,8 +2925,11 @@ class RoboClicker {
             
             // --- GOLDEN DRONE SPAWN ---
             if (now - this.lastGoldenDroneSpawn > 30000) { // Every 30 seconds
-                this.spawnGoldenDrone();
-                this.lastGoldenDroneSpawn = now;
+                // Fix: Only spawn if tab is visible to prevent stacking
+                if (!document.hidden) {
+                    this.spawnGoldenDrone();
+                    this.lastGoldenDroneSpawn = now;
+                }
             }
 
             // Robot Personality Check (Randomly trigger animations)
@@ -2901,6 +2956,13 @@ class RoboClicker {
 
             // --- BOT SWARM (AUTO CLICKER) ---
             if (this.adManager.boosts['auto_clicker'] && this.adManager.boosts['auto_clicker'] > now) {
+                // Show Overlay
+                if (this.els.botswarmOverlay) {
+                    this.els.botswarmOverlay.classList.remove('hidden');
+                    const remaining = Math.ceil((this.adManager.boosts['auto_clicker'] - now) / 1000);
+                    if (this.els.botswarmTimer) this.els.botswarmTimer.textContent = remaining + "s";
+                }
+
                 // Simulate clicks (Super Fast!)
                 // Use safe coordinate center if robot exists
                 let rect = this.els.hero ? this.els.hero.getBoundingClientRect() : null;
@@ -2925,6 +2987,11 @@ class RoboClicker {
                 // "AUTO" Text
                 if (Math.random() < 0.1) {
                     this.spawnDamageNumber("AUTO!", centerX + (Math.random()*60-30), centerY - 60, '#5352ed');
+                }
+            } else {
+                // Hide Overlay
+                if (this.els.botswarmOverlay) {
+                    this.els.botswarmOverlay.classList.add('hidden');
                 }
             }
 
