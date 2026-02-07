@@ -11,14 +11,15 @@
                 this.sdk = null;
                 this.isInitialized = false;
                 this.debug = true;
+                this.gameplayStarted = false; // Global flag to prevent duplicates
             }
 
             async init() {
                 if (this.isInitialized) return true;
 
-                // Poll for SDK presence (up to 2 seconds)
+                // Poll for SDK presence (up to 5 seconds)
                 let attempts = 0;
-                while ((!window.CrazyGames || !window.CrazyGames.SDK) && attempts < 20) {
+                while ((!window.CrazyGames || !window.CrazyGames.SDK) && attempts < 50) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                     attempts++;
                 }
@@ -44,8 +45,18 @@
                 }
             }
 
+            // Wrapper for safe gameplay start
+            safeGameplayStart() {
+                this.gameplayStart();
+            }
+
             gameplayStart() {
                 if (!this.checkInit()) return;
+                
+                // Prevent duplicate calls
+                if (this.gameplayStarted) return;
+                this.gameplayStarted = true;
+
                 if (this.mockMode) return;
                 try {
                     this.sdk.game.gameplayStart();
@@ -55,6 +66,9 @@
 
             gameplayStop() {
                 if (!this.checkInit()) return;
+                
+                this.gameplayStarted = false; // Reset flag to allow future starts
+
                 if (this.mockMode) return;
                 try {
                     this.sdk.game.gameplayStop();
