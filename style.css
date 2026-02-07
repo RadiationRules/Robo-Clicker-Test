@@ -2230,6 +2230,12 @@ body {
     display: block;
     position: relative; /* Not absolute */
     animation: blink 4s infinite;
+    border: 3px solid #fff; /* White Outline */
+}
+
+@keyframes popOut {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.2); opacity: 0; }
 }
 
 /* Remove reflection per user request */

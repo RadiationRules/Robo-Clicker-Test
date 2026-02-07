@@ -254,18 +254,15 @@ class RoboClicker {
             this.initTutorial();
         }
 
-        // --- Remove Loading Screen (QUICK FIX) ---
-        const removeLoading = () => {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.remove();
-                }, 100); // Even faster fade out
-            }
-        };
-        // Run immediately
-        setTimeout(removeLoading, 50); 
+        // --- Remove Loading Screen (Animated Pop-Out) ---
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            // Add pop-out animation class
+            loadingScreen.style.animation = 'popOut 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards';
+            setTimeout(() => {
+                loadingScreen.remove();
+            }, 400); 
+        }
     }
     
     initTasks() {
@@ -2260,27 +2257,37 @@ class RoboClicker {
         }
 
         this.adManager.requestedType = type;
+        console.log(`[AdManager] Requesting ad for: ${type}`);
         
         // CrazyGames SDK Ad Request
         if (window.CrazyGames && window.CrazyGames.SDK) {
-            window.CrazyGames.SDK.ad.requestAd('rewarded', {
-                adStarted: () => {
-                    console.log("Ad started");
-                    this.stopGameplay();
-                },
-                adFinished: () => {
-                    console.log("Ad finished");
-                    this.resumeGameplay();
-                    this.grantReward(type);
-                    if (callbacks.onFinish) callbacks.onFinish();
-                },
-                adError: (error) => {
-                    console.warn("Ad error:", error);
-                    this.resumeGameplay();
-                    alert("Ad failed to load. Please try again later.");
-                    if (callbacks.onError) callbacks.onError(error);
-                }
-            });
+            try {
+                window.CrazyGames.SDK.ad.requestAd('rewarded', {
+                    adStarted: () => {
+                        console.log("[AdManager] Ad Started");
+                        this.stopGameplay();
+                    },
+                    adFinished: () => {
+                        console.log("[AdManager] Ad Finished - Granting Reward");
+                        // Grant Reward FIRST to ensure user gets it even if resume fails
+                        this.grantReward(type);
+                        this.resumeGameplay();
+                        if (callbacks.onFinish) callbacks.onFinish();
+                    },
+                    adError: (error) => {
+                        console.warn("[AdManager] Ad Error:", error);
+                        this.resumeGameplay();
+                        
+                        // Friendly error message
+                        alert("Ad failed to load. Please try again later.");
+                        if (callbacks.onError) callbacks.onError(error);
+                    }
+                });
+            } catch (err) {
+                console.error("[AdManager] SDK Request Exception:", err);
+                this.resumeGameplay(); // Ensure game continues
+                alert("An error occurred while loading the ad.");
+            }
         } else {
             // Dev Fallback
             console.log("Dev Mode: Ad Watched (No SDK)");
@@ -2304,7 +2311,9 @@ class RoboClicker {
         
         // SDK Gameplay Stop
         if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
-            window.CrazyGames.SDK.game.gameplayStop();
+            try {
+                window.CrazyGames.SDK.game.gameplayStop();
+            } catch (e) { console.warn("SDK Stop Error", e); }
         }
     }
 
@@ -2316,7 +2325,9 @@ class RoboClicker {
         
         // SDK Gameplay Start
         if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
-            window.CrazyGames.SDK.game.gameplayStart();
+            try {
+                window.CrazyGames.SDK.game.gameplayStart();
+            } catch (e) { console.warn("SDK Start Error", e); }
         }
     }
 
@@ -2325,10 +2336,14 @@ class RoboClicker {
         const duration = 180000; // 3 minutes
         this.adManager.cooldowns[type] = Date.now() + duration;
         
-        // Find button and start timer UI
-        const btn = document.querySelector(`.bonus-btn[onclick="game.watchAd('${type}')"]`);
+        // Find button - Robust Selector (Data Attribute -> Onclick Fallback)
+        let btn = document.querySelector(`.bonus-btn[data-ad-type="${type}"]`);
+        if (!btn) {
+             btn = document.querySelector(`.bonus-btn[onclick="game.watchAd('${type}')"]`);
+        }
+
         if (btn) {
-            const originalText = btn.textContent;
+            const originalText = btn.innerHTML; // Use innerHTML to keep icon
             btn.disabled = true;
             btn.classList.add('cooldown-active');
             
@@ -2336,7 +2351,7 @@ class RoboClicker {
                 const remaining = this.adManager.cooldowns[type] - Date.now();
                 if (remaining <= 0) {
                     clearInterval(interval);
-                    btn.textContent = originalText;
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                     btn.classList.remove('cooldown-active');
                 } else {
