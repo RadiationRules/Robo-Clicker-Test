@@ -275,10 +275,24 @@
                 await this.init();
                 
                 // 1. Clear Cloud Data (Wait for it)
-                await this.clearData(key);
+                if (!this.mockMode) {
+                    try {
+                        // Attempt to clear ALL data from SDK
+                        if (this.sdk.data && typeof this.sdk.data.clear === 'function') {
+                            await this.sdk.data.clear();
+                            this.log("Cleared ALL SDK data.");
+                        } else {
+                            // Fallback to specific key if clear() is not available
+                            await this.clearData(key);
+                        }
+                    } catch (e) {
+                         this.error("SDK Clear Error:", e);
+                         // Try key fallback on error
+                         await this.clearData(key);
+                    }
+                }
                 
                 // 2. Clear Local Storage
-                localStorage.removeItem(key);
                 localStorage.clear();
                 sessionStorage.clear();
                 
