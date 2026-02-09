@@ -689,55 +689,8 @@ class RoboClicker {
         return 1; // Disabled drone multiplier boost as per user request
     }
 
-    triggerSlidingAd() {
-        // --- NEW LOGIC: NOTIFICATION ONLY ---
-        // Instead of spawning a banner, we highlight a card in the drawer and notify the user.
-        
-        // Pick random variant
-        const variants = ['turbo', 'auto', 'auto_clicker'];
-        const type = variants[Math.floor(Math.random() * variants.length)];
-        
-        // Map type to Card ID
-        let cardId = '';
-        if (type === 'turbo') cardId = 'card-turbo';
-        else if (type === 'auto') cardId = 'card-auto';
-        else if (type === 'auto_clicker') cardId = 'card-swarm';
-        
-        const card = document.getElementById(cardId);
-        if (card) {
-            // Remove highlight from others first? No, let them stack or clear all?
-            // Let's clear all first to be neat.
-            ['card-turbo', 'card-auto', 'card-swarm'].forEach(id => {
-                const c = document.getElementById(id);
-                if (c) c.classList.remove('card-highlight');
-            });
-            
-            // Add highlight
-            card.classList.add('card-highlight');
-            
-            // Auto-remove highlight after 15s? Or keep until clicked?
-            // Keep until drawer opened?
-            // Let's remove it after 20s so it doesn't stay forever if ignored.
-            setTimeout(() => {
-                if (card) card.classList.remove('card-highlight');
-            }, 20000);
-        }
-        
-        // Trigger Notification on Drawer Button
-        const bonusBadge = document.getElementById('bonus-badge');
-        if (bonusBadge) {
-            bonusBadge.classList.remove('hidden');
-            bonusBadge.classList.add('active-pulse');
-        }
-        
-        const handle = document.getElementById('bonus-btn');
-        if (handle) {
-            handle.classList.add('attention-shake');
-            setTimeout(() => handle.classList.remove('attention-shake'), 1000);
-        }
-        
-        this.playNotificationSound();
-    }
+    // triggerSlidingAd removed as per user request
+
 
     // --- GAMEPLAY LOGIC ---
 
@@ -1393,26 +1346,9 @@ class RoboClicker {
         // 1. Close Modal
         this.toggleModal('rebirth-modal', false);
 
-        // 2. Trigger Midgame Ad (Interstitial) via CrazyManager
-        if (window.CrazyManager) {
-            window.CrazyManager.showMidgameAd({
-                adStarted: () => {
-                    this.stopGameplay();
-                },
-                adFinished: () => {
-                    this.resumeGameplay();
-                    this.triggerRebirthSequence();
-                },
-                adError: (error) => {
-                    this.resumeGameplay();
-                    this.triggerRebirthSequence();
-                }
-            });
-        } else {
-            // Dev Mode
-            console.log("Dev: Rebirth Ad Skipped");
-            this.triggerRebirthSequence();
-        }
+        // 2. Trigger Rebirth Sequence (Ad Removed)
+        console.log("Rebirth Ad Skipped (User Request)");
+        this.triggerRebirthSequence();
     }
 
     triggerRebirthSequence() {
@@ -2248,37 +2184,18 @@ class RoboClicker {
         const now = Date.now();
         if (this.adManager.cooldowns && this.adManager.cooldowns[type]) {
             if (now < this.adManager.cooldowns[type]) {
-                alert("Ad is on cooldown!");
+                // If it's a button click, the UI should be disabled, but for safety:
+                // console.log("Reward is on cooldown!");
                 return;
             }
         }
 
         this.adManager.requestedType = type;
-        console.log(`[AdManager] Requesting ad for: ${type}`);
+        console.log(`[AdManager] Granting reward for: ${type} (No Ad)`);
         
-        // Use CrazySDKManager
-        if (window.CrazyManager) {
-            window.CrazyManager.showRewardedAd({
-                adStarted: () => {
-                    this.stopGameplay(); // Game-specific pause logic (audio)
-                },
-                adFinished: () => {
-                    this.grantReward(type);
-                    this.resumeGameplay();
-                    if (callbacks.onFinish) callbacks.onFinish();
-                },
-                adError: (error) => {
-                    this.resumeGameplay();
-                    alert("Ad failed to load. Please try again later.");
-                    if (callbacks.onError) callbacks.onError(error);
-                }
-            });
-        } else {
-            // Dev Fallback
-            console.log("Dev Mode: Ad Watched (No SDK)");
-            this.grantReward(type);
-            if (callbacks.onFinish) callbacks.onFinish();
-        }
+        // Direct Grant (No Ad System)
+        this.grantReward(type);
+        if (callbacks.onFinish) callbacks.onFinish();
     }
 
     // Alias for HTML onclicks
@@ -2341,7 +2258,7 @@ class RoboClicker {
         const now = Date.now();
         
         // Start Cooldown for button-based ads
-        if (type === 'turbo' || type === 'auto' || type === 'lucky') {
+        if (type === 'turbo' || type === 'auto' || type === 'lucky' || type === 'auto_clicker') {
             this.startAdCooldown(type);
         }
 
@@ -3058,12 +2975,8 @@ class RoboClicker {
             this.updateBoostsUI(); // New UI Update
 
             // --- AUTO SPAWN ADS & OFFERS ---
-            // Sliding Ad Banner: Every 10 seconds (Deterministic)
-            if (now - this.lastAdSpawn > 10000) {
-                this.triggerSlidingAd();
-                this.lastAdSpawn = now;
-            }
-
+            // Sliding Ad Banner removed
+            
             // Free Upgrade Bubble: Very Frequent (5% chance per tick if none exist)
             if (Math.random() < 0.05) {
                 this.spawnRandomFreeUpgrade();
