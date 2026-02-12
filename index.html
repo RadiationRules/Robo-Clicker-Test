@@ -395,6 +395,9 @@
             </div>
 
             <div class="hud-controls">
+                <button id="boss-btn" class="icon-btn" title="Boss Battle" style="border-color: #ff4757; color: #ff4757;">
+                    <i class="fa-solid fa-skull"></i>
+                </button>
                 <button id="index-btn" class="icon-btn" title="Robot Index">
                     <i class="fa-solid fa-book-open"></i>
                     <div id="index-badge" class="notification-badge hidden">!</div>
@@ -772,4 +775,95 @@
 
     <!-- Daily Reward Button Moved to HUD -->
     
+    <!-- BOSS BATTLE OVERLAY -->
+    <div id="boss-battle-overlay" class="modal-overlay hidden">
+        <div class="boss-bg">
+            <div class="boss-grid"></div>
+        </div>
+
+        <div class="boss-header">
+            <div class="boss-stats-top">
+                <div class="boss-stat-item">
+                    <span class="boss-stat-label">BOT LEVEL</span>
+                    <span id="boss-level">1</span>
+                </div>
+                <div class="boss-damage-header">
+                    <div class="boss-damage-item">
+                        <i class="fa-solid fa-hand-fist"></i> Damage: <span id="boss-click-damage">1</span>
+                    </div>
+                    <div class="boss-damage-item rec-damage">
+                        <i class="fa-solid fa-bullseye"></i> Recommended: <span id="boss-rec-damage">1</span>
+                    </div>
+                </div>
+            </div>
+            <button id="close-boss-btn" class="close-modal-btn">&times;</button>
+        </div>
+
+        <div class="boss-main-area">
+            <div id="boss-container" class="boss-container">
+                <!-- Boss HP Bar moved here to be over the boss -->
+                <div class="boss-hp-container">
+                    <div class="boss-hp-bar">
+                        <div id="boss-hp-fill" class="boss-hp-fill"></div>
+                    </div>
+                    <div class="boss-hp-text"><span id="boss-hp-current">100</span> / <span id="boss-hp-max">100</span> HP</div>
+                </div>
+
+                <div id="boss-robot" class="boss-robot">
+                    <div class="boss-glow"></div>
+                    <div class="boss-head">
+                        <div class="boss-eyes">
+                            <div class="boss-eye left"></div>
+                            <div class="boss-eye right"></div>
+                        </div>
+                    </div>
+                    <div class="boss-body">
+                        <div class="boss-core"></div>
+                    </div>
+                    <div class="boss-arms">
+                        <div class="boss-arm left"></div>
+                        <div class="boss-arm right"></div>
+                    </div>
+                </div>
+                <div id="laser-container"></div>
+            </div>
+
+            <div class="boss-upgrades-panel">
+                <h3 class="upgrades-title">BOSS UPGRADES</h3>
+                <div class="boss-upgrade-list">
+                    <!-- Damage -->
+                    <div class="boss-upgrade-card" id="upgrade-boss-damage">
+                        <div class="upgrade-icon damage-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Increase Damage</div>
+                            <div class="upgrade-desc">Increases Click damage.</div>
+                            <div class="upgrade-cost">Money: <span id="boss-damage-cost">$1,000</span></div>
+                        </div>
+                        <button class="boss-buy-btn" onclick="game.buyBossUpgrade('damage')">BUY</button>
+                    </div>
+                    <!-- Auto Shoot -->
+                    <div class="boss-upgrade-card" id="upgrade-boss-auto">
+                        <div class="upgrade-icon auto-icon"><i class="fa-solid fa-gun"></i></div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Auto shoot</div>
+                            <div class="upgrade-desc">Auto shoots lasers at boss.</div>
+                            <div class="upgrade-cost">Money: <span id="boss-auto-cost">$1,000</span></div>
+                        </div>
+                        <button class="boss-buy-btn" onclick="game.buyBossUpgrade('auto')">BUY</button>
+                    </div>
+                    <!-- Critical Strike (Moved to bottom) -->
+                    <div class="boss-upgrade-card" id="upgrade-boss-crit">
+                        <div class="upgrade-icon crit-icon"><i class="fa-solid fa-star"></i></div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Critical Strike</div>
+                            <div class="upgrade-desc">Chance for 2x damage.</div>
+                            <div class="upgrade-cost">Money: <span id="boss-crit-cost">$1,000</span></div>
+                        </div>
+                        <button class="boss-buy-btn" onclick="game.buyBossUpgrade('crit')">BUY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>

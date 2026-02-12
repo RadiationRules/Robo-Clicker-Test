@@ -91,7 +91,8 @@ const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
-    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
+    'golden_drops': { name: "Golden Drops", desc: "Golden Drops give 2x more money", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-coins' },
+    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 750, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
 
@@ -163,6 +164,18 @@ class RoboClicker {
                 count: 0,
                 timer: null,
                 multiplier: 1
+            },
+
+            // Boss Battle State
+            boss: {
+                level: 1,
+                hp: 100,
+                maxHp: 100,
+                clickDamage: 1,
+                critChanceLevel: 0,
+                autoShootLevel: 0,
+                damageUpgradeLevel: 0,
+                autoShootInterval: null
             },
             
             lastSave: Date.now(),
@@ -440,7 +453,24 @@ class RoboClicker {
             musicSlider: document.getElementById('setting-music'),
             
             confirmYesBtn: document.getElementById('confirm-yes-btn'),
-            confirmNoBtn: document.getElementById('confirm-no-btn')
+            confirmNoBtn: document.getElementById('confirm-no-btn'),
+
+            // Boss Battle Elements
+            bossOverlay: document.getElementById('boss-battle-overlay'),
+            bossBtn: document.getElementById('boss-btn'),
+            closeBossBtn: document.getElementById('close-boss-btn'),
+            bossLevel: document.getElementById('boss-level'),
+            bossHpFill: document.getElementById('boss-hp-fill'),
+            bossHpCurrent: document.getElementById('boss-hp-current'),
+            bossHpMax: document.getElementById('boss-hp-max'),
+            bossRobot: document.querySelector('.boss-robot'),
+            bossClickDamage: document.getElementById('boss-click-damage'),
+            bossRecDamage: document.getElementById('boss-rec-damage'),
+            bossDamageCost: document.getElementById('boss-damage-cost'),
+            bossCritCost: document.getElementById('boss-crit-cost'),
+            bossAutoCost: document.getElementById('boss-auto-cost'),
+            bossUpgradeBtns: document.querySelectorAll('.boss-buy-btn'),
+            laserContainer: document.getElementById('laser-container')
         };
     }
 
@@ -1754,7 +1784,12 @@ class RoboClicker {
             
             // Reward: 20% of current money or 5 mins of income
             // Balanced: 50x Click Power * Multiplier * 100 (Big Burst)
-            const reward = this.getClickPower() * this.getGlobalMultiplier() * 500; 
+            let reward = this.getClickPower() * this.getGlobalMultiplier() * 500; 
+            
+            // Golden Drops Upgrade (Exclusive Shop)
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['golden_drops']) {
+                reward *= 2;
+            }
             
             this.addMoney(reward);
             this.playNotificationSound();
@@ -2128,6 +2163,22 @@ class RoboClicker {
         setTimeout(() => ripple.remove(), 500);
     }
 
+    showFloatingText(text, type = 'default') {
+        const el = document.createElement('div');
+        el.className = `floating-text ${type}`;
+        el.textContent = text;
+        
+        // Random position near center
+        const x = window.innerWidth / 2 + (Math.random() * 200 - 100);
+        const y = window.innerHeight / 2 + (Math.random() * 200 - 100);
+        
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2000);
+    }
+
     animateHero() {
         this.els.hero.style.transform = 'scale(0.95)';
         setTimeout(() => {
@@ -2181,6 +2232,14 @@ class RoboClicker {
             }
         }
     }
+
+    // Consolidated boss battle methods moved to end of class.
+
+
+
+
+
+
 
     toggleBonusDrawer() {
         this.els.bonusDrawer.classList.toggle('open');
@@ -2611,6 +2670,235 @@ class RoboClicker {
 
     // --- SETUP & UTILS ---
 
+    // --- BOSS BATTLE METHODS ---
+    openBossBattle() {
+        if (!this.els.bossOverlay) return;
+        this.els.bossOverlay.classList.remove('hidden');
+        this.updateBossUI();
+        this.playClickSound();
+        
+        // Start auto-shoot if level > 0
+        if (this.gameState.boss.autoShootLevel > 0) {
+            this.startBossAutoShoot();
+        }
+    }
+
+    closeBossBattle() {
+        if (!this.els.bossOverlay) return;
+        this.els.bossOverlay.classList.add('hidden');
+        this.playClickSound();
+        this.stopBossAutoShoot();
+    }
+
+    updateBossUI() {
+        if (!this.els.bossLevel) return;
+        
+        const b = this.gameState.boss;
+        
+        this.els.bossLevel.textContent = b.level;
+        this.els.bossHpCurrent.textContent = Math.ceil(b.hp);
+        this.els.bossHpMax.textContent = b.maxHp;
+        
+        const hpPercent = (b.hp / b.maxHp) * 100;
+        this.els.bossHpFill.style.width = `${hpPercent}%`;
+        
+        this.els.bossClickDamage.textContent = b.clickDamage;
+        
+        if (this.els.bossRecDamage) {
+            const recDamage = Math.ceil(b.maxHp / 100);
+            this.els.bossRecDamage.textContent = this.formatNumber(recDamage);
+        }
+        
+        this.els.bossDamageCost.textContent = `$${this.formatNumber(this.getBossUpgradeCost('damage'))}`;
+        if (this.els.bossCritCost) {
+            this.els.bossCritCost.textContent = `$${this.formatNumber(this.getBossUpgradeCost('crit'))}`;
+        }
+        this.els.bossAutoCost.textContent = `$${this.formatNumber(this.getBossUpgradeCost('auto'))}`;
+
+        // Update button states
+        const damageCost = this.getBossUpgradeCost('damage');
+        const critCost = this.getBossUpgradeCost('crit');
+        const autoCost = this.getBossUpgradeCost('auto');
+
+        const damageBtn = document.querySelector('#upgrade-boss-damage .boss-buy-btn');
+        const critBtn = document.querySelector('#upgrade-boss-crit .boss-buy-btn');
+        const autoBtn = document.querySelector('#upgrade-boss-auto .boss-buy-btn');
+
+        if (damageBtn) damageBtn.classList.toggle('disabled', this.gameState.money < damageCost);
+        if (critBtn) critBtn.classList.toggle('disabled', this.gameState.money < critCost);
+        if (autoBtn) autoBtn.classList.toggle('disabled', this.gameState.money < autoCost);
+
+        // Lock UI Handling removed as requested
+        if (this.els.bossRobot) {
+            this.els.bossRobot.classList.remove('locked');
+            let timerEl = document.getElementById('boss-lock-timer');
+            if (timerEl) timerEl.classList.add('hidden');
+        }
+    }
+
+    getBossUpgradeCost(type) {
+        const b = this.gameState.boss;
+        if (type === 'damage') {
+            return Math.floor(1000 * Math.pow(1.6, b.damageUpgradeLevel));
+        } else if (type === 'crit') {
+            return Math.floor(1000 * Math.pow(1.75, b.critChanceLevel));
+        } else {
+            return Math.floor(1000 * Math.pow(1.8, b.autoShootLevel));
+        }
+    }
+
+    buyBossUpgrade(type) {
+        const cost = this.getBossUpgradeCost(type);
+        if (this.gameState.money >= cost) {
+            this.gameState.money -= cost;
+            if (type === 'damage') {
+                this.gameState.boss.damageUpgradeLevel++;
+                this.gameState.boss.clickDamage += 2;
+            } else if (type === 'crit') {
+                this.gameState.boss.critChanceLevel++;
+            } else {
+                this.gameState.boss.autoShootLevel++;
+                this.startBossAutoShoot();
+            }
+            this.updateDisplay();
+            this.updateBossUI();
+            this.playClickSound();
+            this.saveGame();
+        } else {
+            if (this.els.money) {
+                this.els.money.classList.add('shake-error');
+                setTimeout(() => this.els.money.classList.remove('shake-error'), 500);
+            }
+        }
+    }
+
+    handleBossClick(e) {
+        if (!this.gameState.boss) return;
+        
+        // Lock removed
+        
+        // Crit Logic
+        const critChance = 0.05 + (this.gameState.boss.critChanceLevel * 0.05); // Base 5% + 5% per level
+        const isCrit = Math.random() < critChance;
+        const damage = isCrit ? this.gameState.boss.clickDamage * 2 : this.gameState.boss.clickDamage;
+        
+        this.damageBoss(damage);
+        
+        // --- JUICE: SCREEN SHAKE ---
+        if (this.els.bossOverlay) {
+            this.els.bossOverlay.classList.remove('boss-shake');
+            void this.els.bossOverlay.offsetWidth; // Force reflow
+            this.els.bossOverlay.classList.add('boss-shake');
+        }
+
+        this.spawnLaser(e.clientX, e.clientY);
+        
+        // Visual Damage Pop
+        this.spawnDamagePop(e.clientX, e.clientY, damage, isCrit);
+        
+        // Visual feedback - Click Animation
+        if (this.els.bossRobot) {
+            this.els.bossRobot.classList.remove('clicked');
+            void this.els.bossRobot.offsetWidth; // Force reflow
+            this.els.bossRobot.classList.add('clicked');
+        }
+        
+        this.playClickSound();
+    }
+
+    damageBoss(amount) {
+        this.gameState.boss.hp -= amount;
+        
+        if (this.gameState.boss.hp <= 0) {
+            this.levelUpBoss();
+        }
+        
+        this.updateBossUI();
+    }
+
+    levelUpBoss() {
+        this.gameState.boss.level++;
+        // Balanced scaling: Smooth progression
+        // Level 1: 100
+        // Level 2: 250
+        // Level 3: 625
+        // ...
+        this.gameState.boss.maxHp = Math.floor(100 * Math.pow(2.2, this.gameState.boss.level - 1));
+        this.gameState.boss.hp = this.gameState.boss.maxHp;
+        
+        // Lock removed as requested
+        this.gameState.boss.lockedUntil = 0;
+        
+        // Reward for defeating boss
+        const rewardGems = 50 + (this.gameState.boss.level * 5);
+        this.gameState.gems += rewardGems;
+        this.updateDisplay();
+        
+        this.showFloatingText(`+${rewardGems} Gems!`, 'gem-reward');
+        this.showCustomRewardModal(rewardGems, true, "BOSS DEFEATED!");
+        this.playNotificationSound();
+    }
+
+    spawnLaser(x, y) {
+        if (!this.els.laserContainer) return;
+        
+        const laser = document.createElement('div');
+        const fromLeft = Math.random() > 0.5;
+        laser.className = `pov-laser ${fromLeft ? 'laser-left' : 'laser-right'}`;
+        
+        const offset = (Math.random() - 0.5) * 100;
+        if (fromLeft) {
+            laser.style.left = `calc(5% + ${offset}px)`;
+        } else {
+            laser.style.right = `calc(5% + ${offset}px)`;
+        }
+        
+        this.els.laserContainer.appendChild(laser);
+        setTimeout(() => laser.remove(), 600);
+    }
+
+    spawnDamagePop(x, y, amount, isCritical = false) {
+        const pop = document.createElement('div');
+        pop.className = `damage-pop ${isCritical ? 'critical' : ''}`;
+        // User asked to make numbers not as big as "violent", so we'll keep it clean
+        pop.textContent = isCritical ? `CRIT! -${this.formatNumber(amount)}` : `-${this.formatNumber(amount)}`;
+        
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 60;
+        pop.style.left = `${x + offsetX}px`;
+        pop.style.top = `${y + offsetY}px`;
+        
+        const randomRot = (Math.random() * 40 - 20);
+        pop.style.setProperty('--random-rot', `${randomRot}deg`);
+        
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 800);
+    }
+
+    startBossAutoShoot() {
+        this.stopBossAutoShoot();
+        if (this.gameState.boss.autoShootLevel > 0) {
+            const interval = Math.max(100, 1000 - (this.gameState.boss.autoShootLevel * 100));
+            this.gameState.boss.autoShootInterval = setInterval(() => {
+                // Lock check removed
+                if (!this.els.bossOverlay.classList.contains('hidden')) {
+                    const rect = this.els.bossRobot.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    this.damageBoss(1);
+                    this.spawnLaser(centerX, centerY);
+                }
+            }, interval);
+        }
+    }
+
+    stopBossAutoShoot() {
+        if (this.gameState.boss.autoShootInterval) {
+            clearInterval(this.gameState.boss.autoShootInterval);
+            this.gameState.boss.autoShootInterval = null;
+        }
+    }
+
     setupEventListeners() {
         // Mouse Interaction
         this.els.hero.addEventListener('mousedown', (e) => {
@@ -2711,6 +2999,26 @@ class RoboClicker {
 
         document.getElementById('confirm-rebirth-btn').addEventListener('click', () => this.rebirth());
         
+        // Boss Battle Events
+        if (this.els.bossBtn) {
+            this.els.bossBtn.addEventListener('click', () => this.openBossBattle());
+        }
+        if (this.els.closeBossBtn) {
+            this.els.closeBossBtn.addEventListener('click', () => this.closeBossBattle());
+        }
+        if (this.els.bossRobot) {
+            this.els.bossRobot.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.handleBossClick(e);
+            });
+            this.els.bossRobot.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    this.handleBossClick(e.changedTouches[i]);
+                }
+            }, { passive: false });
+        }
+
         document.getElementById('daily-reward-btn').addEventListener('click', () => {
             this.checkDailyReward(false); // Update UI
             this.toggleModal('daily-rewards-modal', true);
@@ -2797,6 +3105,11 @@ class RoboClicker {
             this.toggleModal(null, false);
         });
         
+        // Boss Battle Listeners
+        if (this.els.bossBtn) this.els.bossBtn.addEventListener('click', () => this.openBossBattle());
+        if (this.els.closeBossBtn) this.els.closeBossBtn.addEventListener('click', () => this.closeBossBattle());
+        if (this.els.bossRobot) this.els.bossRobot.addEventListener('click', (e) => this.handleBossClick(e));
+
         // New Index Button Logic
         document.getElementById('index-btn').addEventListener('click', () => {
              this.toggleModal('index-modal', true);
@@ -2839,6 +3152,11 @@ class RoboClicker {
     startGameLoop() {
         setInterval(() => {
             const now = Date.now();
+
+            // Update Boss UI if overlay is open (for countdown)
+            if (this.els.bossOverlay && !this.els.bossOverlay.classList.contains('hidden')) {
+                this.updateBossUI();
+            }
 
             // --- HEAT SYSTEM LOGIC ---
             if (this.heat > 0) {
@@ -2903,6 +3221,11 @@ class RoboClicker {
                     this.spawnGoldenDrone();
                     this.lastGoldenDroneSpawn = now;
                 }
+            }
+
+            // Update Boss UI if visible (for lock timer)
+            if (this.els.bossOverlay && !this.els.bossOverlay.classList.contains('hidden')) {
+                this.updateBossUI();
             }
 
             // Robot Personality Check (Randomly trigger animations)
@@ -3240,6 +3563,33 @@ class RoboClicker {
             this.renderFlyingDrones();
         } else {
             this.gameState.drones = [];
+        }
+
+        // 8. Boss Recovery
+        if (!this.gameState.boss) {
+            this.gameState.boss = {
+                level: 1,
+                hp: 100,
+                maxHp: 100,
+                clickDamage: 1,
+                critChanceLevel: 0,
+                autoShootLevel: 0,
+                damageUpgradeLevel: 0,
+                autoShootInterval: null,
+                lockedUntil: 0
+            };
+        } else {
+            // Ensure all fields exist and are numbers to prevent NaN
+            const b = this.gameState.boss;
+            b.level = Number(b.level) || 1;
+            b.hp = Number(b.hp) || 100;
+            b.maxHp = Number(b.maxHp) || 100;
+            b.clickDamage = Number(b.clickDamage) || 1;
+            b.critChanceLevel = Number(b.critChanceLevel) || 0;
+            b.autoShootLevel = Number(b.autoShootLevel) || 0;
+            b.damageUpgradeLevel = Number(b.damageUpgradeLevel) || 0;
+            b.autoShootInterval = null;
+            b.lockedUntil = Number(b.lockedUntil) || 0;
         }
     }
 
