@@ -31,7 +31,7 @@
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: #4facfe; /* Friendly Blue Base */
-    z-index: 9999;
+    z-index: 99999;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -2460,7 +2460,7 @@ body {
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.8);
     display: flex; justify-content: center; align-items: center;
-    z-index: 9999;
+    z-index: 21000;
     backdrop-filter: blur(5px);
     animation: fadeIn 0.3s ease;
 }
@@ -2595,7 +2595,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9000; /* SUPER HIGH - Covers everything */
+    z-index: 20000; /* SUPER HIGH - Covers everything */
     backdrop-filter: blur(10px);
 }
 
@@ -4661,7 +4661,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
-    z-index: 2000;
+    z-index: 15000;
 }
 
 /* Boss Robot State */
@@ -4873,6 +4873,7 @@ body {
     height: 100%;
 }
 
+/* --- BOSS ROBOT VISUALS --- */
 .boss-robot {
     width: 300px;
     height: 420px;
@@ -4885,47 +4886,244 @@ body {
     margin-top: 150px;
 }
 
+.boss-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 140%; height: 140%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255, 71, 87, 0.3) 0%, transparent 70%);
+    animation: bossGlowPulse 3s infinite alternate;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes bossGlowPulse {
+    from { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+    to { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+}
+
+.boss-head {
+    width: 100px;
+    height: 90px;
+    background: linear-gradient(135deg, #2f3542, #1e272e);
+    border: 4px solid #ff4757;
+    border-radius: 20px 20px 10px 10px;
+    position: absolute;
+    top: 0; left: 100px;
+    box-shadow: inset 0 0 20px rgba(255, 71, 87, 0.2), 0 10px 20px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3;
+}
+
+.boss-eyes {
+    display: flex;
+    gap: 20px;
+}
+
+.boss-eye {
+    width: 25px;
+    height: 8px;
+    background: #ff4757;
+    box-shadow: 0 0 15px #ff4757, 0 0 5px #fff;
+    border-radius: 4px;
+    animation: eyePulse 1s infinite alternate;
+}
+
+@keyframes eyePulse {
+    from { opacity: 0.7; transform: scaleX(1); }
+    to { opacity: 1; transform: scaleX(1.2); }
+}
+
+.boss-body {
+    width: 180px;
+    height: 200px;
+    background: linear-gradient(135deg, #2f3542, #1e272e);
+    border: 5px solid #ff4757;
+    border-radius: 30px;
+    position: absolute;
+    top: 85px; left: 60px;
+    box-shadow: inset 0 0 30px rgba(255, 71, 87, 0.2), 0 15px 30px rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+}
+
+.boss-core {
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, #ff4757 0%, #ff6b81 30%, #2f3542 100%);
+    border: 4px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 30px #ff4757, inset 0 0 20px #fff;
+    animation: corePulse 1.5s infinite alternate;
+}
+
+@keyframes corePulse {
+    0% { transform: scale(0.9); filter: brightness(1); }
+    100% { transform: scale(1.1); filter: brightness(1.4) drop-shadow(0 0 20px #ff4757); }
+}
+
+.boss-arms {
+    position: absolute;
+    top: 110px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    z-index: 1;
+}
+
+.boss-arm {
+    width: 60px;
+    height: 180px;
+    background: linear-gradient(to bottom, #2f3542, #1e272e);
+    border: 4px solid #ff4757;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.boss-arm.left {
+    transform: rotate(15deg) translateX(-20px);
+    animation: armFloatL 3s infinite alternate ease-in-out;
+}
+
+.boss-arm.right {
+    transform: rotate(-15deg) translateX(20px);
+    animation: armFloatR 3s infinite alternate ease-in-out;
+}
+
+@keyframes armFloatL {
+    from { transform: rotate(15deg) translateX(-20px) translateY(0); }
+    to { transform: rotate(20deg) translateX(-25px) translateY(10px); }
+}
+
+@keyframes armFloatR {
+    from { transform: rotate(-15deg) translateX(20px) translateY(0); }
+    to { transform: rotate(-20deg) translateX(25px) translateY(10px); }
+}
+
+/* Juicy Click Animation */
 .boss-robot.clicked {
-    animation: bossHit 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: bossJuicyClick 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.5) !important;
 }
 
-@keyframes bossHit {
-    0% { transform: scale(1) translateY(0); }
-    50% { transform: scale(0.92) translateY(5px); }
-    100% { transform: scale(1) translateY(0); }
-}
-
-.boss-robot:active {
-    transform: scale(0.95);
+@keyframes bossJuicyClick {
+    0% { transform: scale(1) translateY(0); filter: brightness(1.5) drop-shadow(0 0 30px #ff4757); }
+    20% { transform: scale(0.85) translateY(10px) rotate(-2deg); }
+    50% { transform: scale(1.1) translateY(-5px) rotate(2deg); }
+    100% { transform: scale(1) translateY(0) rotate(0); filter: brightness(1) drop-shadow(0 0 10px rgba(255, 71, 87, 0.2)); }
 }
 
 @keyframes bossFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* --- EXCLUSIVE ITEM (MEGA DRONE) --- */
+.exclusive-item {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1)) !important;
+    border: 2px solid #ffd700 !important;
+    position: relative;
+    overflow: hidden;
+    animation: exclusiveGlow 3s infinite alternate;
+}
+
+.exclusive-item::before {
+    content: 'EXCLUSIVE';
+    position: absolute;
+    top: 5px;
+    right: -25px;
+    background: #ffd700;
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: 900;
+    padding: 2px 30px;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.exclusive-item .upgrade-icon {
+    background: radial-gradient(circle, #ffd700, #ff8c00) !important;
+    color: #fff !important;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
+    animation: exclusiveFloat 2s infinite ease-in-out;
+}
+
+.exclusive-item .upgrade-cost {
+    color: #ffd700 !important;
+}
+
+.exclusive-item .boss-buy-btn {
+    background: linear-gradient(to bottom, #ffd700, #ff8c00) !important;
+    box-shadow: 0 4px 0 #b8860b !important;
+    color: #000 !important;
+}
+
+.exclusive-item .boss-buy-btn:hover {
+    background: linear-gradient(to bottom, #ffeb3b, #ffa000) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #b8860b !important;
+}
+
+@keyframes exclusiveGlow {
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+    to { box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+}
+
+@keyframes exclusiveFloat {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-5px) rotate(5deg); }
+}
+
+.item-owned {
+    opacity: 0.7;
+    background: rgba(46, 213, 115, 0.1) !important;
+    cursor: default !important;
+}
+
+.item-owned .purchase-btn {
+    background: #2ed573 !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+
+.boss-robot:active {
+    transform: scale(0.92) translateY(4px);
+}
+
+@keyframes bossFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+    50% { transform: translateY(-20px) rotate(2deg) scale(1.02); }
 }
 
 .boss-glow {
     position: absolute;
     width: 150%; height: 150%;
     top: -25%; left: -25%;
-    background: radial-gradient(circle, rgba(255, 71, 87, 0.3) 0%, transparent 70%);
-    animation: bossGlowPulse 2s infinite alternate;
+    background: radial-gradient(circle, rgba(255, 71, 87, 0.4) 0%, transparent 70%);
+    animation: bossGlowPulse 1.5s infinite alternate;
+    pointer-events: none;
 }
 
 @keyframes bossGlowPulse {
-    from { opacity: 0.5; transform: scale(1); }
-    to { opacity: 0.8; transform: scale(1.1); }
+    from { opacity: 0.4; transform: scale(0.9); filter: blur(10px); }
+    to { opacity: 0.7; transform: scale(1.1); filter: blur(20px); }
 }
 
 .boss-head {
     width: 100px; height: 100px;
-    background: #2d3436;
+    background: linear-gradient(135deg, #2d3436, #000);
     border: 4px solid #ff4757;
     border-radius: 20px;
     position: absolute;
     top: 0; left: 50%;
     transform: translateX(-50%);
     z-index: 5;
+    box-shadow: inset 0 0 15px rgba(255, 71, 87, 0.3);
 }
 
 .boss-eyes {
@@ -4937,9 +5135,9 @@ body {
 
 .boss-eye {
     width: 20px; height: 10px;
-    background: #ff4757;
+    background: #fff;
     border-radius: 5px;
-    box-shadow: 0 0 15px #ff4757;
+    box-shadow: 0 0 15px #ff4757, 0 0 30px #ff4757;
     animation: bossEyeBlink 4s infinite;
 }
 
@@ -4950,30 +5148,31 @@ body {
 
 .boss-body {
     width: 150px; height: 180px;
-    background: #2d3436;
+    background: linear-gradient(180deg, #2d3436, #1a1a1a);
     border: 4px solid #ff4757;
     border-radius: 30px;
     position: absolute;
     top: 90px; left: 50%;
     transform: translateX(-50%);
     z-index: 4;
+    box-shadow: inset 0 0 20px rgba(255, 71, 87, 0.2);
 }
 
 .boss-core {
-    width: 60px; height: 60px;
-    background: radial-gradient(circle, #ff4757 0%, #2d0a0a 100%);
-    border: 4px solid #fff;
+    width: 65px; height: 65px;
+    background: radial-gradient(circle, #fff 0%, #ff4757 40%, #2d0a0a 100%);
+    border: 3px solid #fff;
     border-radius: 50%;
     position: absolute;
     top: 40px; left: 50%;
     transform: translateX(-50%);
-    box-shadow: 0 0 30px #ff4757;
-    animation: corePulse 1s infinite alternate;
+    box-shadow: 0 0 30px #ff4757, 0 0 60px rgba(255, 71, 87, 0.5);
+    animation: corePulse 0.8s infinite alternate;
 }
 
 @keyframes corePulse {
-    from { transform: translateX(-50%) scale(1); opacity: 0.8; }
-    to { transform: translateX(-50%) scale(1.2); opacity: 1; }
+    from { transform: translateX(-50%) scale(0.95); opacity: 0.8; }
+    to { transform: translateX(-50%) scale(1.15); opacity: 1; filter: brightness(1.2); }
 }
 
 .boss-arms {
@@ -4985,11 +5184,12 @@ body {
 
 .boss-arm {
     width: 40px; height: 150px;
-    background: #2d3436;
+    background: linear-gradient(to bottom, #2d3436, #000);
     border: 4px solid #ff4757;
     border-radius: 20px;
     position: absolute;
     top: 110px;
+    box-shadow: inset 0 0 10px rgba(255, 71, 87, 0.2);
 }
 
 .boss-arm.left { left: 0; transform: rotate(15deg); animation: leftArmMove 3s infinite ease-in-out; }
@@ -5000,9 +5200,130 @@ body {
     50% { transform: rotate(25deg); }
 }
 
-@keyframes rightArmMove {
-    0%, 100% { transform: rotate(-15deg); }
-    50% { transform: rotate(-25deg); }
+/* Landscape Mobile Optimization (iPhone/iPad) */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    :root {
+        font-size: 12px; /* Shrink all rem-based units */
+    }
+
+    .boss-header {
+        padding: 10px 20px;
+        height: 60px;
+    }
+
+    .boss-stats-top {
+        gap: 20px;
+    }
+
+    .boss-stat-item {
+        padding: 5px 15px;
+    }
+
+    #boss-level {
+        font-size: 1.8rem;
+    }
+
+    .boss-main-area {
+        padding: 0 20px;
+        gap: 20px;
+    }
+
+    .boss-robot {
+        width: 180px;
+        height: 250px;
+        margin-top: 80px;
+        margin-left: 0;
+    }
+
+    .boss-head {
+        width: 60px;
+        height: 55px;
+        left: 60px;
+        border-width: 2px;
+    }
+
+    .boss-body {
+        width: 110px;
+        height: 120px;
+        top: 50px;
+        left: 35px;
+        border-width: 3px;
+    }
+
+    .boss-core {
+        width: 45px;
+        height: 45px;
+    }
+
+    .boss-arm {
+        width: 35px;
+        height: 110px;
+        border-width: 2px;
+    }
+
+    .boss-hp-container {
+        top: 20px;
+        left: 50%;
+        width: 200px;
+    }
+
+    .boss-hp-bar {
+        height: 12px;
+        border-width: 2px;
+    }
+
+    .boss-upgrades-panel {
+        width: 280px;
+        padding: 15px;
+        transform: translate(0, 0);
+        margin-left: 0;
+    }
+
+    .upgrades-title {
+        font-size: 1rem;
+        padding-bottom: 8px;
+    }
+
+    .boss-upgrade-card {
+        padding: 8px;
+        gap: 10px;
+    }
+
+    .upgrade-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .boss-buy-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .damage-pop {
+        font-size: 1.2rem;
+    }
+}
+
+/* iPad Landscape Scaling */
+@media screen and (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+    :root {
+        font-size: 14px;
+    }
+
+    .boss-robot {
+        transform: scale(0.8);
+        margin-top: 100px;
+    }
+
+    .boss-upgrades-panel {
+        transform: translate(0, 0);
+        width: 320px;
+    }
+    
+    .boss-hp-container {
+        top: calc(50% - 220px);
+    }
 }
 
 .boss-upgrades-panel {
@@ -5149,40 +5470,48 @@ body {
     z-index: 15;
 }
 
+/* Auto-Hit Juice */
+.boss-robot.auto-hit {
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(255, 71, 87, 0.4));
+    transform: scale(0.98);
+}
+
 .laser {
     position: absolute;
-    height: 8px;
-    background: linear-gradient(90deg, transparent, #00d2ff, #fff, #00d2ff, transparent);
-    box-shadow: 0 0 30px #00d2ff, 0 0 60px rgba(0, 210, 255, 0.6), inset 0 0 10px #fff;
-    border-radius: 4px;
+    height: 10px;
+    background: linear-gradient(90deg, transparent, #ff4757, #fff, #ff4757, transparent);
+    box-shadow: 0 0 30px #ff4757, 0 0 60px rgba(255, 71, 87, 0.6), inset 0 0 10px #fff;
+    border-radius: 5px;
     z-index: 15;
     pointer-events: none;
-    width: 250px;
+    width: 300px;
     filter: blur(0.5px);
 }
 
 .laser-left {
-    bottom: -100px;
-    left: -100px;
+    bottom: -150px;
+    left: -150px;
     transform-origin: left center;
-    animation: laserPOVLeft 0.4s forwards cubic-bezier(0.165, 0.84, 0.44, 1);
+    animation: laserPOVLeft 0.5s forwards cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .laser-right {
-    bottom: -100px;
-    right: -100px;
+    bottom: -150px;
+    right: -150px;
     transform-origin: right center;
-    animation: laserPOVRight 0.4s forwards cubic-bezier(0.165, 0.84, 0.44, 1);
+    animation: laserPOVRight 0.5s forwards cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 @keyframes laserPOVLeft {
-    0% { transform: rotate(-55deg) scaleX(0); opacity: 1; }
-    100% { transform: rotate(-35deg) translate(1200px, -800px) scaleX(2.5); opacity: 0; }
+    0% { transform: rotate(-55deg) scaleX(0); opacity: 1; filter: hue-rotate(0deg); }
+    50% { opacity: 1; }
+    100% { transform: rotate(-35deg) translate(1400px, -900px) scaleX(3); opacity: 0; filter: hue-rotate(45deg); }
 }
 
 @keyframes laserPOVRight {
-    0% { transform: rotate(55deg) scaleX(0); opacity: 1; }
-    100% { transform: rotate(35deg) translate(-1200px, -800px) scaleX(2.5); opacity: 0; }
+    0% { transform: rotate(55deg) scaleX(0); opacity: 1; filter: hue-rotate(0deg); }
+    50% { opacity: 1; }
+    100% { transform: rotate(35deg) translate(-1400px, -900px) scaleX(3); opacity: 0; filter: hue-rotate(-45deg); }
 }
 
 .damage-pop {
@@ -5207,29 +5536,6 @@ body {
     0% { transform: translate(-50%, 0) scale(0.5) rotate(var(--random-rot, -15deg)); opacity: 0; }
     30% { transform: translate(-50%, -40px) scale(1.2) rotate(calc(var(--random-rot, 0deg) + 10deg)); opacity: 1; }
     100% { transform: translate(-50%, -100px) scale(1) rotate(var(--random-rot, 0deg)); opacity: 0; }
-}
-
-/* Boss Robot Juiciness */
-.boss-robot.clicked {
-    animation: bossPulse 0.15s ease-out;
-}
-
-@keyframes bossPulse {
-    0% { transform: scale(1); filter: brightness(1); }
-    50% { transform: scale(0.92); filter: brightness(1.3) saturate(1.2); }
-    100% { transform: scale(1); filter: brightness(1); }
-}
-
-/* Screen Shake for Boss Overlay */
-.boss-shake {
-    animation: bossShake 0.2s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes bossShake {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-4px, 2px); }
-    50% { transform: translate(4px, -2px); }
-    75% { transform: translate(-2px, 4px); }
 }
 
 /* Screen Shake */
@@ -5260,6 +5566,7 @@ body {
 .floating-text.gem-reward {
     color: #9b59b6;
     font-size: 2rem;
+    z-index: 22000; /* Above Boss UI and Reward Modals */
 }
 
 @keyframes floatingTextAnim {

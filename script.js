@@ -1060,13 +1060,7 @@ class RoboClicker {
             const canAfford = this.gameState.gems >= item.cost;
             
             const div = document.createElement('div');
-            div.className = `upgrade-item ${canAfford && !isOwned ? 'can-afford' : ''}`;
-            
-            // If owned, maybe style differently
-            if (isOwned) {
-                div.style.opacity = '0.7';
-                div.style.background = '#e8f7eb';
-            }
+            div.className = `upgrade-item ${canAfford && !isOwned ? 'can-afford' : ''} ${key === 'mega_drone' ? 'exclusive-item' : ''} ${isOwned ? 'item-owned' : ''}`;
             
             let btnText = `💎 ${item.cost}`;
             if (isOwned) btnText = "OWNED";
@@ -1115,8 +1109,8 @@ class RoboClicker {
             this.updateDisplay();
             this.renderGemShop();
             
-            // Effect
-            alert(`${item.name} Acquired!`);
+            // Modern Visual Feedback
+            this.showFloatingText(`${item.name} UNLOCKED!`, 'gem-reward');
         }
     }
     
@@ -2784,13 +2778,6 @@ class RoboClicker {
         
         this.damageBoss(damage);
         
-        // --- JUICE: SCREEN SHAKE ---
-        if (this.els.bossOverlay) {
-            this.els.bossOverlay.classList.remove('boss-shake');
-            void this.els.bossOverlay.offsetWidth; // Force reflow
-            this.els.bossOverlay.classList.add('boss-shake');
-        }
-
         this.spawnLaser(e.clientX, e.clientY);
         
         // Visual Damage Pop
@@ -2819,18 +2806,14 @@ class RoboClicker {
     levelUpBoss() {
         this.gameState.boss.level++;
         // Balanced scaling: Smooth progression
-        // Level 1: 100
-        // Level 2: 250
-        // Level 3: 625
-        // ...
         this.gameState.boss.maxHp = Math.floor(100 * Math.pow(2.2, this.gameState.boss.level - 1));
         this.gameState.boss.hp = this.gameState.boss.maxHp;
         
         // Lock removed as requested
         this.gameState.boss.lockedUntil = 0;
         
-        // Reward for defeating boss
-        const rewardGems = 50 + (this.gameState.boss.level * 5);
+        // Reward for defeating boss - Always 50 gems as requested
+        const rewardGems = 50;
         this.gameState.gems += rewardGems;
         this.updateDisplay();
         
@@ -2880,13 +2863,23 @@ class RoboClicker {
         if (this.gameState.boss.autoShootLevel > 0) {
             const interval = Math.max(100, 1000 - (this.gameState.boss.autoShootLevel * 100));
             this.gameState.boss.autoShootInterval = setInterval(() => {
-                // Lock check removed
+                // Ensure auto-shoot ONLY works when the boss overlay is visible
                 if (!this.els.bossOverlay.classList.contains('hidden')) {
                     const rect = this.els.bossRobot.getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
                     const centerY = rect.top + rect.height / 2;
+                    
+                    // Damage the boss
                     this.damageBoss(1);
+                    
+                    // Trigger visual effects
                     this.spawnLaser(centerX, centerY);
+                    
+                    // Add a special auto-shoot juice to the robot
+                    if (this.els.bossRobot) {
+                        this.els.bossRobot.classList.add('auto-hit');
+                        setTimeout(() => this.els.bossRobot.classList.remove('auto-hit'), 100);
+                    }
                 }
             }, interval);
         }
