@@ -2440,92 +2440,325 @@ body {
     text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
 }
 
-/* Daily Rewards Redesign */
-.daily-scroll-container {
-    display: flex;
-    gap: 15px;
-    padding: 10px 5px;
-    overflow-x: auto;
-    scrollbar-width: none;
+/* --- ULTIMATE DAILY REWARDS UI --- */
+#daily-rewards-modal {
+    background: linear-gradient(180deg, #2d3436 0%, #000 100%);
+    border: 8px solid #6c5ce7;
+    box-shadow: 0 0 50px rgba(108, 92, 231, 0.4), inset 0 0 100px rgba(0,0,0,0.8);
+    border-radius: 40px;
+    padding: 20px;
+    color: white;
 }
 
+/* Background Animated Particles */
+#daily-rewards-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0));
+    background-size: 200px 200px;
+    animation: starsRotate 60s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes starsRotate {
+    from { transform: translateY(0); }
+    to { transform: translateY(-200px); }
+}
+
+@keyframes cardSlideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#daily-rewards-modal .modal-header h2 {
+    font-family: 'Fredoka One', cursive, sans-serif;
+    font-size: 2.8rem;
+    background: linear-gradient(to bottom, #fff, #a29bfe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 4px 10px rgba(108, 92, 231, 0.5));
+    margin-bottom: 20px;
+}
+
+.daily-scroll-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 10px;
+}
+
+/* Individual Card Design */
 .day-card-infinite {
-    flex: 0 0 160px;
-    height: 220px;
-    background: white;
-    border: 6px solid var(--dark);
+    height: 140px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 3px solid rgba(255, 255, 255, 0.1);
     border-radius: 25px;
-    box-shadow: 0 8px 0 var(--dark);
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 15px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(10px);
     overflow: hidden;
+}
+
+/* Active State */
+.day-card-infinite.active-ready {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(162, 155, 254, 0.2));
+    border: 4px solid #6c5ce7;
+    box-shadow: 0 0 20px rgba(108, 92, 231, 0.4);
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.day-card-infinite.active-ready::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 25px;
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.3);
+    animation: pulseInner 2s infinite alternate;
+}
+
+@keyframes pulseInner {
+    from { opacity: 0.3; }
+    to { opacity: 0.8; }
+}
+
+/* Claimed State */
+.day-card-infinite.already-claimed {
+    opacity: 0.5;
+    background: rgba(0,0,0,0.3);
+    border-color: #27ae60;
+}
+
+.day-card-infinite.already-claimed .day-icon-large {
+    filter: grayscale(1) brightness(0.5);
 }
 
 .day-tag {
     position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--dark);
-    color: white;
-    padding: 4px 12px;
+    top: 10px;
     font-size: 0.8rem;
     font-weight: 900;
-    border-radius: 0 0 12px 12px;
-    width: 80%;
-    text-align: center;
+    color: rgba(0, 0, 0, 0.4); /* Darker for better visibility on light cards */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 5;
+}
+
+/* Day Tag for Jackpot - Red Badge style from image */
+.type-jackpot .day-tag {
+    background: #ff4757;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 6px;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
 }
 
 .day-icon-large {
-    font-size: 3rem;
-    margin: 20px 0 15px;
-    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+    transition: transform 0.3s ease;
 }
 
-.day-reward-info {
-    text-align: center;
-    width: 100%;
+.day-card-infinite:hover .day-icon-large {
+    transform: scale(1.2) rotate(5deg);
 }
 
 .reward-main {
-    font-size: 1.3rem;
+    font-size: 1rem;
     font-weight: 900;
-    color: var(--dark);
-    line-height: 1.1;
+    color: #fff;
 }
 
+/* Day 7 Jackpot - Matching User Image (Dark/Red Theme) */
+.day-card-infinite.type-jackpot {
+    grid-column: span 2;
+    height: 200px; /* Even bigger frame for the ultimate reward */
+    background: #121212; /* Dark background as per image */
+    border: 8px solid #a52a2a; /* Thick dark red border */
+    border-radius: 40px; /* Extra rounded corners */
+    box-shadow: 
+        0 16px 0 #5a0000, /* Thick 3D bottom shadow */
+        inset 0 0 60px rgba(255, 0, 0, 0.4);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px; /* Generous padding to let elements breathe */
+    gap: 10px;
+}
+
+/* Red Sweep for the dark theme */
+.day-card-infinite.type-jackpot::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -100%;
+    width: 60%; height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 71, 87, 0.3), transparent);
+    transform: rotate(35deg);
+    animation: sweep 4s infinite;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.jackpot-icon-premium {
+    font-size: 3.2rem !important; /* Perfect size: not too big, not too small */
+    color: #fff !important;
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.6));
+    animation: iconBouncePremium 2s infinite ease-in-out;
+    z-index: 3;
+    margin: 0;
+}
+
+.jackpot-label-text {
+    font-size: 1.5rem !important; /* Clean, legible size that fits the frame */
+    font-family: 'Fredoka One', cursive;
+    color: #fff !important;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    text-shadow: 
+        0 4px 0 #000,
+        0 0 25px rgba(255, 0, 0, 0.6);
+    z-index: 3;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+}
+
+@keyframes sweep {
+    0% { left: -100%; }
+    25% { left: 150%; }
+    100% { left: 150%; }
+}
+
+@keyframes iconBouncePremium {
+    0%, 100% { transform: scale(1) rotate(-4deg); }
+    50% { transform: scale(1.15) rotate(4deg); }
+}
+
+/* Modal Close Button Fixes */
+.close-modal-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 100;
+}
+
+.close-modal-btn:hover {
+    background: #ff7675;
+    transform: rotate(90deg);
+}
+
+/* Progression Path Dots */
+.daily-scroll-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 40px;
+    right: 40px;
+    height: 2px;
+    background: rgba(255,255,255,0.05);
+    z-index: -1;
+}
+
+/* Custom Reward Types Colors */
+.type-cash .day-icon-large { color: #2ecc71; text-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
+.type-gems .day-icon-large { color: #a29bfe; text-shadow: 0 0 15px rgba(162, 155, 254, 0.5); }
+.type-mega .day-icon-large { color: #00cec9; text-shadow: 0 0 20px rgba(0, 206, 201, 0.6); }
+
 /* Card States & Types */
-.day-card-infinite.type-cash .day-icon-large { color: #2ecc71; }
-.day-card-infinite.type-gems .day-icon-large { color: #9b59b6; }
-.day-card-infinite.type-buff .day-icon-large { color: #e67e22; }
+.day-card-infinite.type-cash {
+    background: linear-gradient(135deg, #ffffff, #e8f7eb);
+    border-color: #2ecc71;
+}
+.day-card-infinite.type-cash .day-icon-large { color: #2ecc71; filter: drop-shadow(0 0 5px rgba(46, 204, 113, 0.3)); }
+
+.day-card-infinite.type-gems {
+    background: linear-gradient(135deg, #ffffff, #fbf2ff);
+    border-color: #9b59b6;
+}
+.day-card-infinite.type-gems .day-icon-large { color: #9b59b6; filter: drop-shadow(0 0 5px rgba(155, 89, 182, 0.3)); }
+
+.day-card-infinite.type-buff {
+    background: linear-gradient(135deg, #ffffff, #fff5e6);
+    border-color: #e67e22;
+}
+.day-card-infinite.type-buff .day-icon-large { color: #e67e22; filter: drop-shadow(0 0 5px rgba(230, 126, 34, 0.3)); }
 
 /* Already Claimed State */
 .day-card-infinite.already-claimed {
-    opacity: 0.6;
-    background: #f1f2f6;
-    border-color: #bdc3c7;
+    opacity: 0.8;
+    background: #e0e0e0 !important;
+    border-color: #999 !important;
+    filter: grayscale(0.3);
+}
+.day-card-infinite.already-claimed .reward-main {
+    color: #666 !important;
 }
 .day-card-infinite.already-claimed::before {
     content: '\f00c';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     position: absolute;
-    top: 10px;
-    right: 10px;
-    color: #2ecc71;
+    top: 5px;
+    right: 5px;
+    color: #27ae60;
     font-size: 1.2rem;
+    z-index: 10;
 }
 
 /* Mega Stash - Day 2 */
 .day-card-infinite.type-mega {
     background: linear-gradient(135deg, #00b894, #00cec9);
     border: 6px solid #55efc4;
-    box-shadow: 0 8px 0 #00b894;
+    box-shadow: 0 8px 0 #006b5a, 0 0 20px rgba(0, 184, 148, 0.4);
+    animation: megaPulse 3s infinite ease-in-out;
+}
+
+.day-card-infinite.type-mega .day-icon-large {
+    font-size: 3.2rem;
+    color: #fff;
+    filter: drop-shadow(0 0 15px #55efc4);
+    animation: megaIconSpin 5s infinite linear;
+}
+
+@keyframes megaIconSpin {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+@keyframes megaPulse {
+    0%, 100% { box-shadow: 0 8px 0 #006b5a, 0 0 20px rgba(0, 184, 148, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 8px 0 #006b5a, 0 0 40px rgba(0, 184, 148, 0.6); transform: scale(1.02); }
 }
 .day-card-infinite.type-mega .day-tag { background: #55efc4; color: #000; }
 .day-card-infinite.type-mega .day-icon-large { color: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
@@ -2534,7 +2767,12 @@ body {
 .day-card-infinite.active-ready {
     background: #fff9db;
     border-color: #f1c40f;
-    animation: cardGlow 2s infinite ease-in-out;
+    animation: cardGlow 2s infinite ease-in-out, cardFloat 2s infinite ease-in-out;
+}
+
+@keyframes cardFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
 }
 
 .day-card-infinite.active-ready::after {
@@ -2553,46 +2791,7 @@ body {
     background: #fdfdfd;
 }
 
-/* Mystery Jackpot Style - High Contrast & Premium Theme */
-.day-card-infinite.type-jackpot {
-    background: linear-gradient(135deg, #2d3436, #000);
-    border: 6px solid #e17055;
-    box-shadow: 0 8px 0 #d63031, 0 0 30px rgba(225, 112, 85, 0.4);
-    position: relative;
-    overflow: hidden;
-}
-
-.day-card-infinite.type-jackpot::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.1), transparent 30%);
-    animation: rotateRay 4s linear infinite;
-}
-
-@keyframes rotateRay {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.day-card-infinite.type-jackpot .day-tag {
-    background: #e17055;
-    color: #fff;
-}
-
-.day-card-infinite.type-jackpot .day-icon-large {
-    color: #fab1a0;
-    text-shadow: 0 0 20px #e17055;
-    animation: floatingIcon 3s infinite ease-in-out;
-}
-
-.day-card-infinite.type-jackpot .reward-main {
-    color: #fff;
-    letter-spacing: 2px;
-    font-size: 1.5rem;
-    text-shadow: 2px 2px 0 #d63031;
-}
-
+/* Removed duplicate Jackpot styles to prevent conflicts */
 @keyframes cardGlow {
     0%, 100% { box-shadow: 0 8px 0 var(--dark), 0 0 10px rgba(241, 196, 15, 0); }
     50% { box-shadow: 0 8px 0 var(--dark), 0 0 20px rgba(241, 196, 15, 0.5); }
@@ -4156,278 +4355,6 @@ body {
     }
 }
 
-/* iPhone/Mobile Landscape Fixes - Shrink UI to fit limited height */
-@media screen and (max-height: 480px) and (orientation: landscape) {
-    :root {
-        --border-width: 2px;
-        --shadow-offset: 3px;
-    }
-
-    /* Loading Screen */
-    .loading-logo {
-        width: 280px;
-        max-width: 80vw;
-    }
-
-    /* HUD */
-    .top-hud {
-        padding: 4px 15px;
-        border-radius: 30px;
-        box-shadow: 3px 3px 0 var(--dark);
-    }
-
-    .currency-container {
-        font-size: 1.2rem;
-        padding: 3px 15px 3px 5px;
-        border-width: 2px;
-    }
-
-    .currency-icon-wrapper {
-        width: 30px;
-        height: 30px;
-        font-size: 1rem;
-        border-width: 2px;
-    }
-
-    .stat-pill {
-        padding: 3px 10px;
-        font-size: 0.75rem;
-        border-width: 2px;
-        gap: 5px;
-    }
-
-    .multiplier-pill {
-        font-size: 0.9rem;
-        padding: 4px 12px;
-    }
-
-    .icon-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.1rem;
-        border-radius: 12px;
-        box-shadow: 3px 3px 0 var(--dark);
-    }
-
-    .notification-badge {
-        width: 18px;
-        height: 18px;
-        font-size: 0.6rem;
-        border-width: 2px;
-    }
-
-    /* Main Stage Layout */
-    .main-stage {
-        grid-template-columns: 1fr 280px;
-        grid-template-rows: 1fr;
-        height: calc(100vh - 80px); /* Fill remaining height */
-        gap: 15px;
-        padding: 5px;
-    }
-
-    .hero-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-        min-width: 0; /* Prevent overflow */
-        position: relative;
-        padding-top: 10px;
-    }
-
-    /* Robot Scaling */
-    .hero-robot {
-        transform: scale(0.65);
-        margin: 0;
-        z-index: 5;
-    }
-
-    .click-pad {
-        flex: 1;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Side Panel Fixes */
-    .side-panel {
-        height: 100%;
-        max-height: 100%;
-        display: flex;
-        flex-direction: column;
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 6px 6px 0 var(--dark);
-    }
-
-    #upgrades-container, #tasks-container, #gems-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 10px;
-    }
-
-    /* Evolution / Fusion Bar */
-    .fusion-container {
-        width: 90%;
-        max-width: 350px;
-        margin: 0 auto 10px;
-    }
-
-    /* Drones Container Constrain */
-    #flying-drones-container {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        z-index: 2;
-        overflow: hidden;
-    }
-
-    .panel-header {
-        padding: 8px;
-    }
-
-    .panel-header h2 {
-        font-size: 1.1rem;
-    }
-
-    .panel-tab {
-        font-size: 0.85rem;
-        padding: 8px;
-    }
-
-    .upgrade-item {
-        grid-template-columns: 45px 1fr 75px;
-        gap: 8px;
-        min-height: 60px;
-        padding: 8px;
-        margin-bottom: 8px;
-    }
-
-    .upgrade-icon-box {
-        width: 45px;
-        height: 45px;
-        font-size: 1.2rem;
-        border-radius: 10px;
-    }
-
-    .upgrade-name {
-        font-size: 0.9rem;
-    }
-
-    .upgrade-desc {
-        font-size: 0.75rem;
-    }
-
-    .purchase-btn {
-        height: 35px;
-        font-size: 0.8rem;
-        border-radius: 8px;
-    }
-
-    .rebirth-trigger-btn {
-        height: 50px;
-        font-size: 1.1rem;
-    }
-
-    /* Drawers */
-    .bonus-drawer {
-        width: 280px;
-        padding: 15px;
-        border-radius: 0 20px 20px 0;
-    }
-
-    .drawer-handle {
-        width: 45px;
-        height: 60px;
-        right: -45px;
-        border-radius: 0 12px 12px 0;
-    }
-
-    .drawer-title-text {
-        font-size: 1.2rem;
-    }
-
-    .bonus-card {
-        grid-template-columns: 50px 1fr;
-        padding: 10px;
-        gap: 8px;
-    }
-
-    .bonus-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.3rem;
-    }
-
-    .bonus-title {
-        font-size: 1rem;
-    }
-
-    .bonus-desc {
-        font-size: 0.75rem;
-    }
-
-    .bonus-btn {
-        padding: 8px;
-        font-size: 0.9rem;
-    }
-
-    /* Modals */
-    .game-modal {
-        padding: 15px;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    .modal-header h2 {
-        font-size: 1.2rem;
-    }
-
-    .rebirth-body-landscape {
-        padding: 10px;
-        gap: 15px;
-    }
-
-    .rebirth-visual-section {
-        padding: 20px;
-    }
-
-    .rebirth-icon-large {
-        font-size: 4rem;
-    }
-
-    .rebirth-content-section {
-        gap: 10px;
-    }
-
-    .rebirth-comparison-box {
-        padding: 10px;
-    }
-
-    .r-label {
-        font-size: 0.7rem;
-    }
-
-    .r-value {
-        font-size: 1.4rem;
-    }
-
-    .info-pill {
-        padding: 4px 10px;
-        font-size: 0.7rem;
-    }
-
-    .rebirth-btn-action {
-        padding: 10px;
-        font-size: 1rem;
-    }
-}
-
 /* iPad specific (Portrait) - Stack but keep tight */
 @media (min-width: 600px) and (max-width: 900px) {
     .game-wrapper {
@@ -4753,16 +4680,7 @@ body {
 .day-card-infinite.type-cash { background: #e8f7eb; }
 .day-card-infinite.type-gems { background: #fbf2ff; }
 .day-card-infinite.type-buff { background: #e3f2fd; }
-.day-card-infinite.type-jackpot { 
-    background: linear-gradient(135deg, #FFD93D, #FF6B6B);
-    animation: jackpotShake 2s infinite;
-}
-
-@keyframes jackpotShake {
-    0%, 100% { transform: rotate(0deg) scale(1.05); }
-    25% { transform: rotate(-2deg) scale(1.05); }
-    75% { transform: rotate(2deg) scale(1.05); }
-}
+/* Old Daily Rewards styles removed to prevent conflicts */
 
 /* States - Thick Style */
 .day-card-infinite.active-ready {
@@ -4817,44 +4735,82 @@ body {
 
 #claim-daily-btn {
     width: 100%;
-    height: 70px;
+    height: 75px;
     padding: 0 30px;
-    background: #6BCB77;
-    border: 6px solid var(--dark);
-    border-radius: 25px;
+    background: linear-gradient(to bottom, #6BCB77, #2ecc71);
+    border: 6px solid #1a1a1a;
+    border-radius: 30px;
     font-family: var(--font-main);
-    font-size: 2rem;
+    font-size: 2.2rem;
     color: white;
-    text-shadow: 3px 3px 0 var(--dark);
-    box-shadow: 0 10px 0 var(--dark);
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.5);
+    box-shadow: 0 12px 0 #1a1a1a, 0 20px 30px rgba(107, 203, 119, 0.3);
     cursor: pointer;
-    transition: all 0.1s;
+    transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-top: 20px;
-    letter-spacing: 1px;
+    margin-top: 25px;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+#claim-daily-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: btnShine 3s infinite;
+}
+
+@keyframes btnShine {
+    0% { left: -150%; }
+    20% { left: 150%; }
+    100% { left: 150%; }
 }
 
 #claim-daily-btn:not(:disabled):hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 0 var(--dark);
-    background: #75d681;
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 18px 0 #1a1a1a, 0 25px 40px rgba(107, 203, 119, 0.4);
+    filter: brightness(1.1);
 }
 
 #claim-daily-btn:not(:disabled):active {
-    transform: translateY(6px);
-    box-shadow: 0 4px 0 var(--dark);
+    transform: translateY(8px) scale(0.95);
+    box-shadow: 0 4px 0 #1a1a1a, 0 5px 15px rgba(0,0,0,0.2);
+    filter: brightness(0.9);
 }
 
 #claim-daily-btn:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    box-shadow: 0 4px 0 var(--dark);
+    background: #4a4a4a;
+    border-color: #2d2d2d;
+    box-shadow: 0 6px 0 #2d2d2d;
     transform: translateY(6px);
+    opacity: 0.7;
+    cursor: not-allowed;
     color: #888;
     text-shadow: none;
+}
+
+#claim-daily-btn:disabled::after {
+    display: none;
+}
+
+/* Success Animation for Claim Button */
+.claim-success-anim {
+    animation: claimSuccess 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+@keyframes claimSuccess {
+    0% { transform: translateY(8px) scale(0.95); }
+    30% { transform: translateY(-15px) scale(1.1); filter: brightness(1.5); }
+    50% { transform: translateY(0) scale(1.05); }
+    70% { transform: scale(1); }
+    100% { transform: scale(1); }
 }
 
 /* Reward Shine for Juicy feel */
@@ -4867,6 +4823,14 @@ body {
     transform: rotate(45deg);
     animation: rewardShine 4s infinite;
     pointer-events: none;
+}
+
+/* Visibility Fix for Days 3-6 */
+.dark-text-reward .reward-main,
+.dark-text-reward .day-tag,
+.dark-text-reward .day-icon-large i {
+    color: #1a1a1a !important;
+    text-shadow: none !important;
 }
 
 @keyframes rewardShine {
@@ -5574,152 +5538,8 @@ body {
     to { filter: brightness(1.5); box-shadow: 0 0 25px #00d2ff, 0 0 40px #00d2ff; }
 }
 
-/* Landscape Mobile Optimization (iPhone/iPad) */
-@media screen and (max-height: 500px) and (orientation: landscape) {
-    :root {
-        font-size: 9px; /* Even smaller base font for perfect fit */
-    }
-
-    body {
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    .game-wrapper {
-        flex-direction: row; 
-        padding: 2px;
-        gap: 5px;
-        height: 100vh;
-        width: 100vw;
-        max-width: none;
-    }
-
-    /* HUD scaling */
-    .top-hud {
-        position: fixed;
-        top: 2px;
-        left: 50%;
-        transform: translateX(-50%) scale(0.7);
-        width: 90vw;
-        height: 40px;
-        z-index: 1000;
-    }
-
-    .sidebar {
-        width: 220px;
-        height: 100%;
-        margin-top: 0;
-        padding-top: 35px;
-        flex-shrink: 0;
-    }
-
-    .main-content {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding-top: 35px;
-        position: relative;
-    }
-
-    .click-pad {
-        transform: scale(0.65);
-        transform-origin: center;
-        margin: 0;
-        height: 100%;
-        width: 100%;
-    }
-
-    /* Boss Overlay Landscape Optimization */
-    .boss-header {
-        height: 40px;
-        padding: 0 15px;
-    }
-
-    .boss-stats-top {
-        transform: scale(0.7);
-        transform-origin: left center;
-    }
-
-    .boss-main-area {
-        flex-direction: row;
-        padding: 5px;
-        height: calc(100% - 40px);
-        align-items: stretch;
-    }
-
-    .boss-container {
-        flex: 1.2;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-    }
-
-    .boss-robot {
-        transform: scale(0.5); /* Significant shrink to fit landscape */
-        margin: 0 !important;
-        transform-origin: center;
-    }
-
-    .boss-hp-container {
-        position: absolute;
-        top: 10px;
-        transform: scale(0.8);
-    }
-
-    .boss-upgrades-panel {
-        flex: 1;
-        width: auto;
-        height: 95%;
-        margin: 0;
-        transform: none;
-        padding: 10px;
-        font-size: 0.9rem;
-    }
-
-    .boss-upgrade-list {
-        gap: 5px;
-    }
-
-    .boss-upgrade-card {
-        padding: 5px;
-    }
-
-    .boss-buy-btn {
-        padding: 5px 10px;
-        font-size: 0.8rem;
-    }
-
-    .damage-pop {
-        font-size: 1.5rem !important;
-    }
-}
 
 /* iPad Landscape Scaling */
-@media screen and (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
-    :root {
-        font-size: 14px;
-    }
-
-    .boss-robot {
-        transform: scale(0.8);
-        margin-top: 100px;
-    }
-
-    .boss-upgrades-panel {
-        transform: translate(0, 0);
-        width: 320px;
-    }
-    
-    .boss-hp-container {
-        top: calc(50% - 220px);
-    }
-}
-
 .boss-upgrades-panel {
     width: 400px;
     background: rgba(15, 23, 42, 0.85);
@@ -6036,6 +5856,101 @@ body {
     color: #9b59b6;
     font-size: 2rem;
     z-index: 22000; /* Above Boss UI and Reward Modals */
+}
+
+/* Jackpot Label Text Fix */
+.jackpot-label-text {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 4px 0 rgba(0,0,0,0.5);
+    margin-top: 5px;
+}
+
+/* Reward Popup Modal - The Satisfying Feedback */
+.reward-popup-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100000;
+    backdrop-filter: blur(10px);
+    animation: rewardFadeIn 0.3s ease-out;
+}
+
+.reward-popup-content {
+    background: #2d3436;
+    border: 8px solid #FFD93D;
+    border-radius: 40px;
+    padding: 40px;
+    text-align: center;
+    max-width: 90%;
+    width: 400px;
+    box-shadow: 0 20px 0 rgba(0,0,0,0.3), 0 0 50px rgba(255, 217, 61, 0.3);
+    animation: rewardScaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reward-popup-header {
+    font-size: 1.8rem;
+    color: #FFD93D;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.reward-popup-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: rewardIconBounce 2s infinite;
+}
+
+.reward-popup-amount {
+    font-size: 3rem;
+    color: #fff;
+    margin-bottom: 30px;
+    text-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+.reward-popup-confirm {
+    background: #6BCB77;
+    border: none;
+    border-radius: 20px;
+    padding: 15px 40px;
+    color: white;
+    font-family: var(--font-main);
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 8px 0 #27ae60;
+    transition: all 0.2s;
+}
+
+.reward-popup-confirm:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 #27ae60;
+}
+
+.reward-popup-modal.fade-out {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.5s ease-in;
+}
+
+@keyframes rewardFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes rewardScaleIn {
+    from { transform: scale(0.5) translateY(50px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes rewardIconBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-20px) scale(1.1); }
 }
 
 @keyframes floatingTextAnim {

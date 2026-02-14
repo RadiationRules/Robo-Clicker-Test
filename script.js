@@ -603,9 +603,7 @@ class RoboClicker {
             const yBase = shuffledSlots[index] !== undefined ? shuffledSlots[index] : (20 + Math.random() * 50);
             
             // X is slightly random for organic feel but kept tight
-            // On mobile landscape, we need to ensure drones don't hide behind the UI
-            const isLandscape = window.matchMedia("(orientation: landscape) and (max-height: 600px)").matches;
-            const x = isLandscape ? (2 + Math.random() * 8) + '%' : (5 + Math.random() * 15) + '%'; 
+            const x = (5 + Math.random() * 15) + '%'; 
             const y = yBase + '%'; 
             
             el.style.left = x;
@@ -2233,11 +2231,48 @@ class RoboClicker {
 
     // Consolidated boss battle methods moved to end of class.
 
+    showCustomRewardModal(amount, isGems = false, title = "REWARD RECEIVED!") {
+        const rewardModal = document.createElement('div');
+        rewardModal.className = 'reward-popup-modal';
+        
+        const formattedAmount = isGems ? amount : this.formatNumber(amount);
+        const icon = isGems ? 'fa-gem' : 'fa-sack-dollar';
+        const color = isGems ? '#9b59b6' : '#2ecc71';
 
+        rewardModal.innerHTML = `
+            <div class="reward-popup-content">
+                <div class="reward-popup-header">${title}</div>
+                <div class="reward-popup-icon" style="color: ${color}"><i class="fa-solid ${icon}"></i></div>
+                <div class="reward-popup-amount">${isGems ? '' : '$'}${formattedAmount}</div>
+                <button class="reward-popup-confirm">AWESOME!</button>
+            </div>
+        `;
+        document.body.appendChild(rewardModal);
 
+        const confirmBtn = rewardModal.querySelector('.reward-popup-confirm');
+        confirmBtn.onclick = () => {
+            rewardModal.classList.add('fade-out');
+            setTimeout(() => rewardModal.remove(), 500);
+            this.playClickSound();
+        };
 
+        this.playNotificationSound();
+    }
 
-
+    playNotificationSound() {
+        if (!this.audioCtx || this.gameState.settings.sfxVolume === 0) return;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, this.audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, this.audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + 0.3);
+    }
 
     toggleBonusDrawer() {
         this.els.bonusDrawer.classList.toggle('open');
@@ -2392,24 +2427,22 @@ class RoboClicker {
 
     showCustomRewardModal(amount, isGems = false, customTitle = null) {
         // Reuse reward modal structure or create dynamic one
-        // We can use the existing reward-modal logic if we inject content
         const overlay = document.createElement('div');
         overlay.className = 'reward-modal-overlay';
-        const symbol = isGems ? '💎' : (customTitle ? '' : '$');
-        const colorClass = isGems ? 'color: #9b59b6;' : 'color: var(--success);';
         
+        // Determine symbol and color
+        let symbol = isGems ? '💎' : '$';
+        let colorClass = isGems ? 'color: #9b59b6;' : 'color: var(--success);';
         let label = isGems ? 'GEMS' : 'CASH';
-        let title = isGems ? 'TASK COMPLETE!' : 'LUCKY STRIKE!';
+        let title = customTitle || (isGems ? 'TASK COMPLETE!' : 'LUCKY STRIKE!');
         
-        // Handle Custom Title (e.g. Free Upgrades)
-        if (customTitle) {
-            title = "REWARD RECEIVED!";
-            label = customTitle;
-        }
-
+        // Format the value display - ALWAYS show as money/gems unless specifically a level count
         let valueDisplay = `${symbol}${this.formatNumber(amount)}`;
-        if (customTitle && !isGems) {
-             valueDisplay = `+${amount} LEVELS`; // Specific for upgrades
+        
+        // Specific override for the "2x FREE UPGRADES" which might pass a customTitle
+        if (customTitle && customTitle.includes("LEVELS")) {
+             valueDisplay = `+${amount} LEVELS`;
+             label = "UPGRADES";
         }
         
         overlay.innerHTML = `
@@ -2505,12 +2538,24 @@ class RoboClicker {
     checkDailyReward(autoOpen = true) {
         const now = Date.now();
         const oneDay = 24 * 60 * 60 * 1000;
+        const threeMinutes = 3 * 60 * 1000;
         const timeSince = now - this.gameState.lastDailyClaim;
+        const playtimeSinceStart = now - this.gameState.startTime;
 
-        if (timeSince > oneDay * 2) this.gameState.dailyStreak = 0;
+        // Reset streak if more than 48 hours passed
+        if (timeSince > oneDay * 2 && this.gameState.lastDailyClaim !== 0) {
+            this.gameState.dailyStreak = 0;
+        }
 
         const currentStreak = this.gameState.dailyStreak;
-        const isClaimable = timeSince > oneDay;
+        
+        // --- Day 1 (streak 0) logic: money reward, claimable after 3 minutes of playtime ---
+        let isClaimable = false;
+        if (currentStreak === 0 && this.gameState.lastDailyClaim === 0) {
+            isClaimable = playtimeSinceStart >= threeMinutes;
+        } else {
+            isClaimable = (this.gameState.lastDailyClaim !== 0) && (timeSince > oneDay);
+        }
         
         if (this.els.dailyGrid) {
             this.els.dailyGrid.innerHTML = '';
@@ -2527,6 +2572,12 @@ class RoboClicker {
                 if (dayIdx < currentStreak) stateClass = 'already-claimed';
                 if (isCurrent) stateClass = isClaimable ? 'active-ready' : 'active-locked';
 
+                // Day 3-6 Visibility Fix: Black text on light backgrounds
+                const dayInWeek = (dayIdx % 7) + 1;
+                if (dayInWeek >= 3 && dayInWeek <= 6) {
+                    stateClass += ' dark-text-reward';
+                }
+
                 const card = document.createElement('div');
                 card.className = `day-card-infinite ${stateClass} type-${type}`;
                 
@@ -2538,25 +2589,32 @@ class RoboClicker {
                     label = `<div class="reward-main">${val} GEMS</div>`; 
                 }
                 else if (type === 'mega') {
-                    icon = 'fa-boxes-stacked';
+                    icon = 'fa-gem';
                     label = `<div class="reward-main">MEGA STASH</div>`;
+                    card.style.background = 'linear-gradient(135deg, #00b894, #2d3436)';
                 }
                 else if (type === 'buff') { 
                     icon = 'fa-bolt-lightning'; 
                     label = `<div class="reward-main">2X SPEED</div>`; 
                 }
                 else if (type === 'jackpot') { 
-                    icon = 'fa-circle-question'; 
-                    label = `<div class="reward-main">JACKPOT</div>`; 
+                    icon = 'fa-crown'; // Ultimate premium icon
+                    label = `<div class="reward-main jackpot-label-text">JACKPOT</div>`; 
                 }
 
                 card.innerHTML = `
                     <div class="day-tag">DAY ${dayIdx + 1}</div>
-                    <div class="day-icon-large"><i class="fa-solid ${icon}"></i></div>
+                    <div class="day-icon-large ${type === 'jackpot' ? 'jackpot-icon-premium' : ''}"><i class="fa-solid ${icon}"></i></div>
                     <div class="day-reward-info">
                         ${label}
                     </div>
                 `;
+                
+                // Add Entrance Animation Delay
+                card.style.animation = `cardSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${i * 0.05}s`;
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+
                 this.els.dailyGrid.appendChild(card);
             }
         }
@@ -2571,7 +2629,11 @@ class RoboClicker {
         } else {
             if (this.els.claimDailyBtn) {
                 this.els.claimDailyBtn.disabled = true;
-                this.els.claimDailyBtn.textContent = "COME BACK TOMORROW";
+                if (currentStreak === 0 && this.gameState.lastDailyClaim === 0) {
+                    this.els.claimDailyBtn.textContent = "PLAY 3 MIN TO UNLOCK";
+                } else {
+                    this.els.claimDailyBtn.textContent = "COME BACK TOMORROW";
+                }
             }
             if (this.els.dailyBadge) this.els.dailyBadge.classList.add('hidden');
             this.updateDailyTimer();
@@ -2591,6 +2653,13 @@ class RoboClicker {
 
     getDailyRewardValue(dayIndex, basePower) {
         const type = this.getDailyRewardType(dayIndex);
+        
+        // Day 1 special reward: 10x highest money reached, min $10,000
+        if (dayIndex === 0) {
+            const highestMoney = this.gameState.totalMoney || 0;
+            return Math.max(10000, highestMoney * 10);
+        }
+
         const cashScale = this.gameState.money * 0.40;
         const productionScale = basePower * 120;
         const baseVal = Math.max(productionScale, cashScale, 1000);
@@ -2618,26 +2687,47 @@ class RoboClicker {
         const type = this.getDailyRewardType(streak);
         const val = this.getDailyRewardValue(streak, Math.max(100, (this.getAutoPower() + this.getClickPower()) * 60));
         
-        if (type === 'cash') {
-            this.addMoney(val);
+        // Double check claimability
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const threeMinutes = 3 * 60 * 1000;
+        const timeSince = now - this.gameState.lastDailyClaim;
+        const playtimeSinceStart = now - this.gameState.startTime;
+        
+        let isClaimable = false;
+        if (streak === 0 && this.gameState.lastDailyClaim === 0) {
+            isClaimable = playtimeSinceStart >= threeMinutes;
+        } else {
+            isClaimable = (this.gameState.lastDailyClaim !== 0) && (timeSince > oneDay);
+        }
+        
+        if (!isClaimable) return;
+
+        // Play sound immediately
+        this.playClickSound();
+
+        if (type === 'cash' || typeof val === 'number') {
+            if (type === 'buff') {
+                this.adManager.boosts['turbo'] = Date.now() + (val * 1000);
+            } else if (type === 'gems') {
+                this.gameState.gems += val;
+            } else {
+                this.addMoney(val);
+            }
         } else if (type === 'jackpot' || type === 'mega') {
             this.addMoney(val.cash);
             this.gameState.gems += val.gems;
-        } else if (type === 'gems') {
-            this.gameState.gems += val;
-        } else if (type === 'buff') {
-            this.adManager.boosts['turbo'] = Date.now() + (val * 1000);
         }
         
         this.gameState.lastDailyClaim = Date.now();
         this.gameState.dailyStreak++;
         
-        // Juicy Feedback
+        // Juicy Feedback - Trigger scale/shake via CSS class instead of direct style
         if (this.els.claimDailyBtn) {
-            this.els.claimDailyBtn.style.transform = 'scale(0.9) translateY(10px)';
+            this.els.claimDailyBtn.classList.add('claim-success-anim');
             setTimeout(() => {
-                this.els.claimDailyBtn.style.transform = '';
-            }, 100);
+                this.els.claimDailyBtn.classList.remove('claim-success-anim');
+            }, 600);
         }
 
         // Confetti for extra juice!
@@ -2664,13 +2754,46 @@ class RoboClicker {
 
     updateDailyTimer() {
         const now = Date.now();
-        const nextTime = this.gameState.lastDailyClaim + (24 * 60 * 60 * 1000);
+        const streak = this.gameState.dailyStreak;
+        const isFirstDay = (streak === 0 && this.gameState.lastDailyClaim === 0);
+        
+        let nextTime;
+        if (isFirstDay) {
+            nextTime = this.gameState.startTime + (3 * 60 * 1000);
+        } else {
+            nextTime = this.gameState.lastDailyClaim + (24 * 60 * 60 * 1000);
+        }
+        
         const diff = nextTime - now;
+        const isReady = diff <= 0;
+        
+        // Update Button Live Text if modal is open
+        if (this.els.claimDailyBtn) {
+            if (isFirstDay && !isReady) {
+                const m = Math.floor(diff / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                this.els.claimDailyBtn.disabled = true;
+                this.els.claimDailyBtn.textContent = `UNLOCKS IN ${m}:${s.toString().padStart(2, '0')}`;
+            } else if (isReady) {
+                if (this.els.claimDailyBtn.disabled) {
+                    this.els.claimDailyBtn.disabled = false;
+                    this.els.claimDailyBtn.innerHTML = '<i class="fa-solid fa-gift"></i> CLAIM REWARD';
+                    // Optional: Refresh grid to show active-ready state
+                    this.checkDailyReward(false);
+                }
+            }
+        }
         
         if (diff > 0) {
             const h = Math.floor(diff / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            this.els.dailyTimer.textContent = `Next in: ${h}h ${m}m`;
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            if (isFirstDay) {
+                this.els.dailyTimer.textContent = `Claim in: ${m}:${s.toString().padStart(2, '0')}`;
+            } else {
+                this.els.dailyTimer.textContent = `Next in: ${h}h ${m}m`;
+            }
         }
     }
 
@@ -3109,9 +3232,15 @@ class RoboClicker {
 
         // Enhanced Close Button Logic
         document.querySelectorAll('.close-modal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
                 const targetId = btn.getAttribute('data-target');
-                this.toggleModal(null, false);
+                if (targetId) {
+                    this.toggleModal(targetId, false);
+                } else {
+                    // Fallback to closing everything if no target specified
+                    this.toggleModal(null, false);
+                }
+                e.stopPropagation();
             });
         });
 
