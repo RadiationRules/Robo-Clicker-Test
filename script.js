@@ -603,7 +603,9 @@ class RoboClicker {
             const yBase = shuffledSlots[index] !== undefined ? shuffledSlots[index] : (20 + Math.random() * 50);
             
             // X is slightly random for organic feel but kept tight
-            const x = (5 + Math.random() * 15) + '%'; 
+            // On mobile landscape, we need to ensure drones don't hide behind the UI
+            const isLandscape = window.matchMedia("(orientation: landscape) and (max-height: 600px)").matches;
+            const x = isLandscape ? (2 + Math.random() * 8) + '%' : (5 + Math.random() * 15) + '%'; 
             const y = yBase + '%'; 
             
             el.style.left = x;
@@ -2416,7 +2418,9 @@ class RoboClicker {
                 <div style="font-size: 1.2rem; color: #555;">YOU HAVE RECEIVED</div>
                 <div class="reward-value" style="${colorClass}">${valueDisplay}</div>
                 <div style="font-size: 1.2rem; color: #555;">${label}</div>
-                <button class="reward-claim-btn" onclick="this.closest('.reward-modal-overlay').remove()">AWESOME!</button>
+                <button class="reward-claim-btn" onclick="this.closest('.reward-modal-overlay').remove()">
+                    <i class="fa-solid fa-check"></i> AWESOME!
+                </button>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -2503,153 +2507,159 @@ class RoboClicker {
         const oneDay = 24 * 60 * 60 * 1000;
         const timeSince = now - this.gameState.lastDailyClaim;
 
-        // Reset if missed a day (allow 48h window)
         if (timeSince > oneDay * 2) this.gameState.dailyStreak = 0;
 
         const currentStreak = this.gameState.dailyStreak;
         const isClaimable = timeSince > oneDay;
         
-        // Base reward calculation
-        const productionPerSec = this.getAutoPower() + (this.getClickPower() * 2);
-        const playerPower = Math.max(100, productionPerSec * 60);
-        
         if (this.els.dailyGrid) {
             this.els.dailyGrid.innerHTML = '';
-        }
+            // Display 7 days of the current week (streak determines which week)
+            const weekStart = Math.floor(currentStreak / 7) * 7;
+            
+            for (let i = 0; i < 7; i++) {
+                const dayIdx = weekStart + i;
+                const type = this.getDailyRewardType(dayIdx);
+                const val = this.getDailyRewardValue(dayIdx, Math.max(100, (this.getAutoPower() + this.getClickPower()) * 60));
+                
+                const isCurrent = (dayIdx === currentStreak);
+                let stateClass = 'future-day';
+                if (dayIdx < currentStreak) stateClass = 'already-claimed';
+                if (isCurrent) stateClass = isClaimable ? 'active-ready' : 'active-locked';
 
-        // Show a window of days
-        const startDay = currentStreak; 
-        const numToShow = 5; 
+                const card = document.createElement('div');
+                card.className = `day-card-infinite ${stateClass} type-${type}`;
+                
+                let icon = 'fa-coins';
+                let label = `<div class="reward-main">$${this.formatNumber(val)}</div>`;
+                
+                if (type === 'gems') { 
+                    icon = 'fa-gem'; 
+                    label = `<div class="reward-main">${val} GEMS</div>`; 
+                }
+                else if (type === 'mega') {
+                    icon = 'fa-boxes-stacked';
+                    label = `<div class="reward-main">MEGA STASH</div>`;
+                }
+                else if (type === 'buff') { 
+                    icon = 'fa-bolt-lightning'; 
+                    label = `<div class="reward-main">2X SPEED</div>`; 
+                }
+                else if (type === 'jackpot') { 
+                    icon = 'fa-circle-question'; 
+                    label = `<div class="reward-main">JACKPOT</div>`; 
+                }
 
-        for (let i = 0; i < numToShow; i++) {
-            const dayIndex = startDay + i;
-            const rewardType = this.getDailyRewardType(dayIndex);
-            const val = this.getDailyRewardValue(dayIndex, playerPower);
-            
-            const el = document.createElement('div');
-            const isCurrent = (i === 0);
-            
-            // Class determines styling
-            let stateClass = 'future-day';
-            if (isCurrent) {
-                stateClass = isClaimable ? 'active-ready' : 'active-locked';
+                card.innerHTML = `
+                    <div class="day-tag">DAY ${dayIdx + 1}</div>
+                    <div class="day-icon-large"><i class="fa-solid ${icon}"></i></div>
+                    <div class="day-reward-info">
+                        ${label}
+                    </div>
+                `;
+                this.els.dailyGrid.appendChild(card);
             }
-            
-            el.className = `day-card-infinite ${stateClass} type-${rewardType}`;
-            
-            // NEW: Gift Icon System
-            let iconHtml = '<i class="fa-solid fa-gift"></i>';
-            let label = `$${this.formatNumber(val)}`;
-            
-            if (rewardType === 'buff_speed') { 
-                iconHtml = '<i class="fa-solid fa-gift" style="color: #00ffff;"></i>'; // Cyan Gift
-                label = '2x SPD'; 
-            }
-            if (rewardType === 'big_cash') { 
-                iconHtml = '<i class="fa-solid fa-gifts" style="color: #FFD700;"></i>'; // Gold Gifts
-                label = 'JACKPOT'; 
-            }
-            
-            // Special Visuals for the Claimable Reward
-            if (isCurrent && isClaimable) {
-                 iconHtml = '<i class="fa-solid fa-box-open fa-bounce" style="color: #00ff00;"></i>'; // Green Open Box
-                 label = "OPEN ME!";
-            } else if (isCurrent && !isClaimable) {
-                // Locked/Waiting state
-                iconHtml = '<i class="fa-solid fa-lock"></i>';
-            }
-            
-            el.innerHTML = `
-                <div class="day-header">Day ${dayIndex + 1}</div>
-                <div class="day-icon-large">${iconHtml}</div>
-                <div class="day-reward-text">${label}</div>
-            `;
-            if (this.els.dailyGrid) this.els.dailyGrid.appendChild(el);
         }
 
         if (isClaimable) {
             if (this.els.claimDailyBtn) {
                 this.els.claimDailyBtn.disabled = false;
-                this.els.claimDailyBtn.textContent = "CLAIM REWARD";
-                this.els.claimDailyBtn.classList.add('pulse-btn-green');
+                this.els.claimDailyBtn.innerHTML = '<i class="fa-solid fa-gift"></i> CLAIM REWARD';
             }
-            if (this.els.dailyTimer) this.els.dailyTimer.classList.add('hidden');
-            
-            if (autoOpen) {
-                this.toggleModal('daily-rewards-modal', true);
-            }
-            
+            if (autoOpen) this.toggleModal('daily-rewards-modal', true);
             if (this.els.dailyBadge) this.els.dailyBadge.classList.remove('hidden');
-            if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.add('pulse-btn');
-            
         } else {
             if (this.els.claimDailyBtn) {
                 this.els.claimDailyBtn.disabled = true;
-                this.els.claimDailyBtn.textContent = "COME BACK LATER";
-                this.els.claimDailyBtn.classList.remove('pulse-btn-green');
+                this.els.claimDailyBtn.textContent = "COME BACK TOMORROW";
             }
-            if (this.els.dailyTimer) {
-                this.els.dailyTimer.classList.remove('hidden');
-                this.updateDailyTimer();
-            }
-            
             if (this.els.dailyBadge) this.els.dailyBadge.classList.add('hidden');
-            if (this.els.dailyRewardBtn) this.els.dailyRewardBtn.classList.remove('pulse-btn');
+            this.updateDailyTimer();
         }
     }
 
     getDailyRewardType(dayIndex) {
-        // Pattern: Cash, Cash, Buff, Cash, Cash, Big Cash
-        if ((dayIndex + 1) % 6 === 0) return 'big_cash';
-        if ((dayIndex + 1) % 3 === 0) return 'buff_speed';
+        // Pattern: Day 2 is Mega, Day 7 is Jackpot
+        const dayInWeek = (dayIndex % 7) + 1;
+        
+        if (dayInWeek === 7) return 'jackpot';
+        if (dayInWeek === 2) return 'mega';
+        if (dayInWeek === 5) return 'buff';
+        if (dayInWeek === 3) return 'gems';
         return 'cash';
     }
 
     getDailyRewardValue(dayIndex, basePower) {
-        // Dynamic scaling: Should be relevant to user's CURRENT status
-        // If user has 1M cash, getting 100 is useless.
-        // Scale against whichever is higher: Production or % of Current Cash
-        
-        const productionScale = basePower; // Already derived from 1 min of production
-        
-        // 50% of current cash as baseline for daily reward (MEGA BUFFED)
-        const cashScale = this.gameState.money * 0.50;
-        
-        const baseValue = Math.max(productionScale, cashScale);
-        
-        // Ensure minimum 500
-        const finalBase = Math.max(500, baseValue);
+        const type = this.getDailyRewardType(dayIndex);
+        const cashScale = this.gameState.money * 0.40;
+        const productionScale = basePower * 120;
+        const baseVal = Math.max(productionScale, cashScale, 1000);
+        const streakBonus = 1 + (dayIndex * 0.1);
 
-        // Stronger Streak Bonus: 25% per day instead of 15%
-        const streakBonus = 1 + (dayIndex * 0.25); 
-        
-        if ((dayIndex + 1) % 6 === 0) return Math.floor(finalBase * 5 * streakBonus); // Jackpot (5x)
-        return Math.floor(finalBase * streakBonus); // Regular
+        switch(type) {
+            case 'jackpot': 
+                return {
+                    cash: Math.floor(baseVal * 10 * streakBonus),
+                    gems: Math.floor(100 + (dayIndex * 20))
+                };
+            case 'mega':
+                return {
+                    cash: Math.floor(baseVal * 3 * streakBonus),
+                    gems: Math.floor(50 + (dayIndex * 10))
+                };
+            case 'gems': return Math.floor(25 + (dayIndex * 5));
+            case 'buff': return 120; // 120 seconds
+            default: return Math.floor(baseVal * streakBonus);
+        }
     }
 
     claimDaily() {
-        const now = Date.now();
         const streak = this.gameState.dailyStreak;
-        
-        // Recalculate based on current stats
-        const productionPerSec = this.getAutoPower() + (this.getClickPower() * 2);
-        const playerPower = Math.max(100, productionPerSec * 60);
-
         const type = this.getDailyRewardType(streak);
-        const val = this.getDailyRewardValue(streak, playerPower);
+        const val = this.getDailyRewardValue(streak, Math.max(100, (this.getAutoPower() + this.getClickPower()) * 60));
         
-        if (type === 'cash' || type === 'big_cash') {
+        if (type === 'cash') {
             this.addMoney(val);
-        } else if (type === 'buff_speed') {
-            this.activateAdBoost(); // Re-use ad boost logic for now (speed boost)
-            alert("SPEED BUFF ACTIVATED!");
+        } else if (type === 'jackpot' || type === 'mega') {
+            this.addMoney(val.cash);
+            this.gameState.gems += val.gems;
+        } else if (type === 'gems') {
+            this.gameState.gems += val;
+        } else if (type === 'buff') {
+            this.adManager.boosts['turbo'] = Date.now() + (val * 1000);
         }
         
-        this.gameState.lastDailyClaim = now;
+        this.gameState.lastDailyClaim = Date.now();
         this.gameState.dailyStreak++;
         
+        // Juicy Feedback
+        if (this.els.claimDailyBtn) {
+            this.els.claimDailyBtn.style.transform = 'scale(0.9) translateY(10px)';
+            setTimeout(() => {
+                this.els.claimDailyBtn.style.transform = '';
+            }, 100);
+        }
+
+        // Confetti for extra juice!
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFD93D', '#6BCB77', '#4D96FF', '#FF6B6B']
+            });
+        }
+
+        if (type === 'jackpot' || type === 'mega') {
+            this.showCustomRewardModal(val.cash, false, type === 'jackpot' ? "ULTIMATE JACKPOT!" : "MEGA STASH!");
+            this.spawnDamageNumber(`+${val.gems} GEMS`, window.innerWidth/2, window.innerHeight/2, '#9b59b6');
+        } else {
+            this.showCustomRewardModal(val, type === 'gems', "DAILY REWARD!");
+        }
+
         this.saveGame();
-        this.checkDailyReward();
+        this.checkDailyReward(false);
+        this.updateDisplay();
     }
 
     updateDailyTimer() {
