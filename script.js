@@ -3369,6 +3369,8 @@ class RoboClicker {
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.saveGame();
+            } else {
+                this._lastPlaytimeTick = Date.now();
             }
         });
 
@@ -3740,13 +3742,19 @@ class RoboClicker {
     }
 
     updatePlaytime() {
-        if (!this._sessionStartTime) {
-            this._sessionStartTime = Date.now();
-            this._baseSessionPlaytime = this.gameState.sessionPlaytime || 0;
+        const now = Date.now();
+        if (!this._lastPlaytimeTick) {
+            this._lastPlaytimeTick = now;
         }
 
-        const elapsedSeconds = (Date.now() - this._sessionStartTime) / 1000;
-        this.gameState.sessionPlaytime = this._baseSessionPlaytime + elapsedSeconds;
+        const dt = (now - this._lastPlaytimeTick) / 1000;
+        this._lastPlaytimeTick = now;
+
+        // Only increment if visible
+        // We also check for massive dt spikes (e.g. > 5s) just in case visibility handler missed
+        if (!document.hidden && dt < 5) {
+            this.gameState.sessionPlaytime = (this.gameState.sessionPlaytime || 0) + dt;
+        }
         
         // Update notification badge
         let claimableCount = 0;
