@@ -555,7 +555,7 @@
             </div>
 
             <div id="card-auto" class="bonus-card">
-                <div class="bonus-icon auto-icon"><i class="fa-solid fa-gears"></i></div>
+                <div class="bonus-icon auto-icon"><i class="fa-solid fa-bolt"></i></div>
                 <div class="bonus-info">
                     <div class="bonus-title">Overclock</div>
                     <div class="bonus-desc">10x Drone Speed (30s)</div>
@@ -811,20 +811,21 @@
 
                 <div id="boss-robot" class="boss-robot">
                     <div class="boss-glow"></div>
-                    <div class="boss-head">
+                    <div class="boss-head critical-section" data-mult="1.1">
                         <div class="boss-eyes">
-                            <div class="boss-eye left"></div>
-                            <div class="boss-eye right"></div>
+                            <div class="boss-eye left critical-section" data-mult="1.2"></div>
+                            <div class="boss-eye right critical-section" data-mult="1.2"></div>
                         </div>
                     </div>
                     <div class="boss-body">
-                        <div class="boss-core"></div>
+                        <div class="boss-core critical-section" data-mult="1.5"></div>
                     </div>
                     <div class="boss-arms">
-                        <div class="boss-arm left"></div>
-                        <div class="boss-arm right"></div>
+                        <div class="boss-arm left critical-section" data-mult="1.05"></div>
+                        <div class="boss-arm right critical-section" data-mult="1.05"></div>
                     </div>
                 </div>
+                <div id="critical-targets"></div>
                 <div id="laser-container"></div>
             </div>
 

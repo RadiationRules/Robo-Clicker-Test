@@ -175,7 +175,8 @@ class RoboClicker {
                 critChanceLevel: 0,
                 autoShootLevel: 0,
                 damageUpgradeLevel: 0,
-                autoShootInterval: null
+                autoShootInterval: null,
+                criticalTargetTimer: null
             },
             
             lastSave: Date.now(),
@@ -464,6 +465,7 @@ class RoboClicker {
             bossHpCurrent: document.getElementById('boss-hp-current'),
             bossHpMax: document.getElementById('boss-hp-max'),
             bossRobot: document.querySelector('.boss-robot'),
+            criticalTargets: document.getElementById('critical-targets'),
             bossClickDamage: document.getElementById('boss-click-damage'),
             bossRecDamage: document.getElementById('boss-rec-damage'),
             bossDamageCost: document.getElementById('boss-damage-cost'),
@@ -2675,6 +2677,9 @@ class RoboClicker {
         if (this.gameState.boss.autoShootLevel > 0) {
             this.startBossAutoShoot();
         }
+
+        // Start Critical Target spawning
+        this.startCriticalTargetLoop();
     }
 
     closeBossBattle() {
@@ -2682,6 +2687,7 @@ class RoboClicker {
         this.els.bossOverlay.classList.add('hidden');
         this.playClickSound();
         this.stopBossAutoShoot();
+        this.stopCriticalTargetLoop();
     }
 
     updateBossUI() {
@@ -2766,28 +2772,137 @@ class RoboClicker {
         }
     }
 
+    // --- Dynamic Critical Targets ---
+    startCriticalTargetLoop() {
+        if (this.gameState.boss.criticalTargetTimer) return;
+        this.spawnCriticalTarget();
+        this.gameState.boss.criticalTargetTimer = setInterval(() => this.spawnCriticalTarget(), 3000); // Every 3 seconds
+    }
+
+    stopCriticalTargetLoop() {
+        if (this.gameState.boss.criticalTargetTimer) {
+            clearInterval(this.gameState.boss.criticalTargetTimer);
+            this.gameState.boss.criticalTargetTimer = null;
+        }
+        if (this.els.criticalTargets) {
+            this.els.criticalTargets.innerHTML = '';
+        }
+    }
+
+    spawnCriticalTarget() {
+        if (!this.els.criticalTargets || this.els.bossOverlay.classList.contains('hidden')) return;
+        
+        const target = document.createElement('div');
+        target.className = 'critical-target';
+        
+        // Random position within boss area (centered around robot)
+        const x = 25 + Math.random() * 50; // 25% to 75%
+        const y = 15 + Math.random() * 50; // 15% to 65%
+        
+        target.style.left = `${x}%`;
+        target.style.top = `${y}%`;
+        
+        // Handle click
+        target.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            this.handleCriticalTargetClick(target, e);
+        });
+        
+        this.els.criticalTargets.appendChild(target);
+        
+        // Auto remove after 2 seconds
+        setTimeout(() => {
+            if (target.parentNode) {
+                target.style.opacity = '0';
+                target.style.transform = 'scale(0)';
+                setTimeout(() => target.remove(), 400);
+            }
+        }, 2000);
+    }
+
+    handleCriticalTargetClick(target, e) {
+        if (target.classList.contains('hit')) return;
+        target.classList.add('hit');
+        
+        // Massive Damage: 10x current click damage
+        const damage = this.gameState.boss.clickDamage * 10;
+        this.damageBoss(damage);
+        this.spawnLaser(e.clientX, e.clientY);
+        this.spawnDamagePop(e.clientX, e.clientY, damage, true);
+        
+        // Visual Feedback
+        if (this.els.bossRobot) {
+            this.els.bossRobot.classList.add('critical-hit-flash');
+            setTimeout(() => this.els.bossRobot.classList.remove('critical-hit-flash'), 300);
+        }
+        
+        // Sound & Haptic
+        this.playClickSound(); // Re-use for now
+        if (window.navigator.vibrate) window.navigator.vibrate(100);
+        
+        setTimeout(() => target.remove(), 300);
+    }
+
     handleBossClick(e) {
         if (!this.gameState.boss) return;
         
-        // Lock removed
+        // Check for critical section click
+        let multiplier = 1;
+        let isCriticalSection = false;
         
-        // Crit Logic
-        const critChance = 0.05 + (this.gameState.boss.critChanceLevel * 0.05); // Base 5% + 5% per level
-        const isCrit = Math.random() < critChance;
-        const damage = isCrit ? this.gameState.boss.clickDamage * 2 : this.gameState.boss.clickDamage;
+        if (e.target && e.target.classList.contains('critical-section')) {
+            multiplier = parseFloat(e.target.getAttribute('data-mult')) || 1;
+            isCriticalSection = true;
+        }
+        
+        // Extremely Rare Crit Logic: Making dynamic targets the clear primary focus
+        const critChance = 0.01 + (this.gameState.boss.critChanceLevel * 0.01); // Base 1% + 1% per level
+        const isRandomCrit = Math.random() < critChance;
+        
+        let damage = this.gameState.boss.clickDamage * multiplier;
+        if (isRandomCrit) {
+            damage *= 2;
+        }
         
         this.damageBoss(damage);
-        
         this.spawnLaser(e.clientX, e.clientY);
         
-        // Visual Damage Pop
-        this.spawnDamagePop(e.clientX, e.clientY, damage, isCrit);
+        // Visual Damage Pop: ONLY show golden text for the rare random crit,
+        // even if clicking a critical section (eyes/core).
+        // This makes the "GOLDEN" text much rarer and more special.
+        this.spawnDamagePop(e.clientX, e.clientY, damage, isRandomCrit);
         
         // Visual feedback - Click Animation
         if (this.els.bossRobot) {
             this.els.bossRobot.classList.remove('clicked');
             void this.els.bossRobot.offsetWidth; // Force reflow
             this.els.bossRobot.classList.add('clicked');
+            
+            // Color flash based on hit type
+            if (isCriticalSection) {
+                this.els.bossRobot.classList.add('critical-hit-flash');
+                setTimeout(() => this.els.bossRobot.classList.remove('critical-hit-flash'), 200);
+                
+                // Screen shake for critical sections
+                /* Removed per user request: no whole screen vibration
+                if (this.els.bossOverlay) {
+                    this.els.bossOverlay.classList.add('shake-screen');
+                    setTimeout(() => this.els.bossOverlay.classList.remove('shake-screen'), 200);
+                }
+                */
+            } else {
+                this.els.bossRobot.classList.add('normal-hit-flash');
+                setTimeout(() => this.els.bossRobot.classList.remove('normal-hit-flash'), 100);
+            }
+        }
+        
+        // Haptic Feedback
+        if (window.navigator && window.navigator.vibrate) {
+            if (isCriticalSection) {
+                window.navigator.vibrate([20, 30, 20]);
+            } else {
+                window.navigator.vibrate(10);
+            }
         }
         
         this.playClickSound();
