@@ -395,16 +395,16 @@
             </div>
 
             <div class="hud-controls">
+                <button id="daily-reward-btn" class="icon-btn" title="Daily Rewards" style="border-color: #9b59b6; color: #9b59b6; position: relative;">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <div id="daily-badge" class="notification-badge hidden">!</div>
+                </button>
                 <button id="boss-btn" class="icon-btn" title="Boss Battle" style="border-color: #ff4757; color: #ff4757;">
                     <i class="fa-solid fa-skull"></i>
                 </button>
                 <button id="index-btn" class="icon-btn" title="Robot Index">
                     <i class="fa-solid fa-book-open"></i>
                     <div id="index-badge" class="notification-badge hidden">!</div>
-                </button>
-                <button id="daily-reward-btn" class="icon-btn" title="Daily Rewards">
-                    <i class="fa-solid fa-calendar-check"></i>
-                    <div id="daily-badge" class="notification-badge hidden">!</div>
                 </button>
                 <button id="settings-btn" class="icon-btn" title="Settings">
                     <i class="fa-solid fa-gear"></i>
@@ -526,9 +526,9 @@
                 </button>
             </div>
         </div>
-    </div>
+        </div>
 
-    <!-- Bonus Drawer (Left Sidebar) -->
+        <!-- Bonus Drawer (Left Sidebar) -->
     <div id="bonus-drawer" class="bonus-drawer">
         <div id="bonus-btn" class="drawer-handle">
             <div id="bonus-badge" class="notification-badge hidden">!</div>
@@ -587,29 +587,26 @@
     <!-- Sliding Ad Banner Removed -->
 
     <!-- Daily Rewards Drawer Removed (Moved to Modal) -->
-
+    
     <!-- Modals -->
     <div id="modal-overlay" class="modal-overlay hidden">
         
-        <!-- Daily Rewards Modal (New Landscape UI) -->
-        <div id="daily-rewards-modal" class="game-modal wide-modal hidden">
+        <!-- Daily Rewards Modal -->
+        <div id="daily-rewards-modal" class="game-modal daily-compact hidden">
             <div class="modal-header">
                 <h2>DAILY REWARDS</h2>
                 <button class="close-modal-btn" data-target="daily-rewards-modal">×</button>
             </div>
             <div class="modal-body">
-                <div class="daily-status">
-                    <div id="daily-timer" class="hidden" style="font-size: 1.2rem; color: #777; margin-bottom: 10px; font-weight: bold;">Next Reward in: --h --m</div>
+                <div id="daily-streak-grid" class="daily-list-landscape">
+                    <!-- Injected by JS -->
                 </div>
-                <div id="daily-streak-grid" class="daily-scroll-container">
-                    <!-- Injected Items -->
-                </div>
-                <button id="claim-daily-btn" class="action-btn" style="width: 100%; margin-top: 20px;" disabled>
-                    CLAIM REWARD
+                <button id="claim-daily-btn" class="claim-daily-main-btn" disabled style="width:100%; margin-top:15px;">
+                    <i class="fa-solid fa-gift"></i> <span>CLAIM REWARD</span>
                 </button>
             </div>
         </div>
-
+        
         <!-- Rebirth Modal -->
         <div id="rebirth-modal" class="game-modal wide-modal rebirth-theme hidden">
             <div class="modal-header">
@@ -682,7 +679,7 @@
         </div>
 
         
-        <!-- Confirm Reset -->
+    <!-- Confirm Reset -->
         <div id="confirm-modal" class="game-modal hidden">
              <div class="modal-header">
                 <h2>ARE YOU SURE?</h2>
@@ -770,7 +767,25 @@
                 </button>
             </div>
         </div>
+    </div>
 
+    <!-- Playtime Rewards Drawer -->
+    <div id="playtime-rewards-modal" class="playtime-drawer">
+        <!-- Handle (Slide out button) -->
+        <div id="playtime-reward-btn" class="playtime-drawer-handle">
+            <div id="playtime-badge" class="reward-badge hidden">0</div>
+            <i class="fa-solid fa-gift"></i>
+        </div>
+
+        <div class="drawer-header">
+            <h2 class="drawer-title-text">PLAYTIME REWARDS</h2>
+            <button id="close-playtime-btn" class="close-modal-btn">×</button>
+        </div>
+        <div class="drawer-body">
+            <div id="playtime-rewards-grid" class="playtime-list">
+                <!-- Injected by JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Daily Reward Button Moved to HUD -->

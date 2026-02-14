@@ -2483,12 +2483,12 @@ body {
 #daily-rewards-modal .modal-header h2 {
     font-family: 'Fredoka One', cursive, sans-serif;
     font-size: 2.8rem;
-    background: linear-gradient(to bottom, #fff, #a29bfe);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
-    filter: drop-shadow(0 4px 10px rgba(108, 92, 231, 0.5));
+    color: #8e44ad;
+    -webkit-text-fill-color: #8e44ad;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    filter: drop-shadow(0 4px 10px rgba(108, 92, 231, 0.3));
     margin-bottom: 20px;
+    letter-spacing: 2px;
 }
 
 .daily-scroll-container {
@@ -2917,7 +2917,7 @@ body {
     font-size: 4.5rem; /* Bigger and more visible */
     font-weight: 900;
     pointer-events: none;
-    z-index: 2000;
+    z-index: 500; /* Lower than UI (1000+) */
     text-shadow: 
         3px 3px 0 var(--white), 
         -1px -1px 0 var(--dark),
@@ -2933,7 +2933,7 @@ body {
     font-size: 2.5rem;
     font-weight: 900;
     pointer-events: none;
-    z-index: 2001; /* Above flying cash */
+    z-index: 501; /* Lower than UI (1000+) */
     text-shadow: 
         3px 3px 0 var(--dark),
         -1px -1px 0 var(--dark),  
@@ -4617,69 +4617,150 @@ body {
     border: 2px solid rgba(255,255,255,0.4);
 }
 
-/* --- DAILY REWARDS (Thick & Juicy Redesign) --- */
-#daily-rewards-modal {
-    background: #FFD93D; /* Sunny Yellow Base */
-    border: 8px solid var(--dark);
-    border-radius: 40px;
-    padding: 30px;
-    box-shadow: 0 15px 0 var(--dark);
-    max-width: 950px !important;
-    width: 95%;
-    overflow: visible;
+/* --- DAILY REWARDS (Compact & Landscape) --- */
+#daily-rewards-modal.daily-compact {
+    max-width: 800px !important;
+    padding: 20px;
+    border-radius: 30px;
+    background: #FFD93D;
 }
 
-#daily-rewards-modal .modal-header {
-    background: transparent;
-    border-bottom: none;
-    padding-bottom: 10px;
-}
-
-#daily-rewards-modal h2 {
+#daily-rewards-modal.daily-compact h2 {
     font-family: var(--font-main);
-    font-size: 3.5rem;
-    color: white;
-    text-shadow: 
-        4px 4px 0 var(--dark),
-        -4px -4px 0 var(--dark),
-        4px -4px 0 var(--dark),
-        -4px 4px 0 var(--dark),
-        0 8px 0 var(--dark);
-    margin: 0;
+    font-size: 3rem;
+    color: #fff;
+    text-align: center;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    -webkit-text-fill-color: white; /* Override previous gradient */
+    letter-spacing: 4px;
+    margin-bottom: 15px;
+    text-shadow: 
+        3px 3px 0 #000,
+        -3px -3px 0 #000,
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        0 6px 0 #000,
+        0 10px 20px rgba(0,0,0,0.4);
+    -webkit-text-stroke: 1px rgba(0,0,0,0.2);
 }
 
-.daily-scroll-container {
+.daily-list-landscape {
     display: flex;
-    gap: 15px;
-    padding: 20px 10px;
+    flex-direction: row;
+    gap: 12px;
+    padding: 10px;
     overflow-x: auto;
     scrollbar-width: none;
-    mask-image: none; /* Remove previous fade mask */
+    justify-content: center;
 }
 
-.day-card-infinite {
-    min-width: 140px;
-    height: 200px;
-    background: white;
-    border: 6px solid var(--dark);
-    border-radius: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 15px;
+.daily-list-landscape::-webkit-scrollbar { display: none; }
+
+.daily-list-landscape .day-card-infinite {
+    min-width: 100px;
+    height: 140px;
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border-width: 4px;
+    box-shadow: 0 4px 0 var(--dark);
+    background: #fff; /* Base background for better contrast */
+}
+
+.daily-list-landscape .day-card-infinite .day-icon-large {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.2));
+    margin-bottom: 5px;
+}
+
+.daily-list-landscape .day-card-infinite .reward-main {
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 900;
+}
+
+/* Day 2 Secret Reward Styling */
+.day-card-infinite .secret-icon {
+    color: #f1c40f !important;
+    filter: drop-shadow(0 0 15px rgba(241, 196, 15, 0.4));
+    animation: pulseSecret 2s infinite ease-in-out;
+}
+
+.day-card-infinite .secret-blur {
+    opacity: 0.9;
+    font-weight: 900;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #8e44ad, #f1c40f, #8e44ad);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shineText 3s linear infinite;
+    text-shadow: none; /* Gradient handles visibility */
+}
+
+.day-card-infinite[data-day-idx="1"]:not(.already-claimed) {
+    background: linear-gradient(135deg, #2c3e50, #000000) !important;
+    border: 2px solid #f1c40f;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 6px 0 var(--dark);
+    overflow: hidden;
 }
 
-/* Day Types - Thick Style */
-.day-card-infinite.type-cash { background: #e8f7eb; }
-.day-card-infinite.type-gems { background: #fbf2ff; }
-.day-card-infinite.type-buff { background: #e3f2fd; }
+.day-card-infinite[data-day-idx="1"]:not(.already-claimed)::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(241, 196, 15, 0.1), transparent);
+    animation: rotateSecret 10s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rotateSecret {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes shineText {
+    to { background-position: 200% center; }
+}
+
+@keyframes pulseSecret {
+    0% { transform: scale(1); opacity: 0.8; filter: drop-shadow(0 0 5px #f1c40f); }
+    50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 20px #f1c40f); }
+    100% { transform: scale(1); opacity: 0.8; filter: drop-shadow(0 0 5px #f1c40f); }
+}
+
+.daily-list-landscape .day-card-infinite.active-ready .secret-icon {
+    color: #fff !important;
+    animation: pulseSecretReady 0.5s infinite alternate;
+}
+
+@keyframes pulseSecretReady {
+    from { transform: scale(1); filter: drop-shadow(0 0 5px #fff); }
+    to { transform: scale(1.2); filter: drop-shadow(0 0 20px #fff); }
+}
+
+.daily-list-landscape .day-card-infinite.active-ready {
+    transform: scale(1.05);
+    box-shadow: 0 6px 0 var(--dark);
+    background: #6BCB77 !important; /* Force success green when ready */
+}
+
+.daily-list-landscape .day-card-infinite.active-ready .reward-main {
+    color: #fff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+
+#claim-daily-btn span {
+    display: inline-block;
+}
+
+/* Day Types - Better Contrast */
+.day-card-infinite.type-cash { color: #27ae60; }
+.day-card-infinite.type-gems { color: #9b59b6; }
+.day-card-infinite.type-buff { color: #e67e22; }
+.day-card-infinite.type-mega, .day-card-infinite.type-jackpot { color: #d35400; } /* Darker orange/gold for contrast */
+
+.day-card-infinite .day-icon-large { color: inherit; }
 /* Old Daily Rewards styles removed to prevent conflicts */
 
 /* States - Thick Style */
@@ -5956,4 +6037,521 @@ body {
 @keyframes floatingTextAnim {
     0% { transform: translateY(0); opacity: 1; }
     100% { transform: translateY(-150px); opacity: 0; }
+}
+
+/* BONUS DRAWER GRID */
+.bonus-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.bonus-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    border: 3px solid #eee;
+    transition: all 0.2s;
+}
+
+.bonus-item i {
+    font-size: 2rem;
+    color: var(--primary);
+    width: 40px;
+    text-align: center;
+}
+
+.bonus-info {
+    flex: 1;
+}
+
+.bonus-name {
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: var(--dark);
+}
+
+.bonus-desc {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 700;
+}
+
+/* PLAYTIME REWARDS STYLES */
+.playtime-drawer-handle {
+    position: absolute;
+    right: -70px;
+    top: calc(50% + 50px); /* Moved down a bit */
+    width: 70px;
+    height: 90px;
+    background: #3498db;
+    border: 4px solid var(--dark);
+    border-left: none;
+    border-radius: 0 20px 20px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1100;
+    box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+    color: white;
+    font-size: 1.8rem;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.playtime-drawer-handle:hover {
+    width: 80px;
+    right: -80px;
+    background: #2980b9;
+}
+
+.playtime-drawer-handle .reward-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #ff4757;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 3px solid var(--dark);
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+    0% { transform: scale(0) rotate(-20deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Daily Rewards List */
+.daily-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    scrollbar-width: none;
+}
+
+.daily-list::-webkit-scrollbar { display: none; }
+
+.claim-daily-main-btn {
+    height: 60px;
+    background: linear-gradient(to bottom, #6BCB77, #2ecc71);
+    border: 4px solid var(--dark);
+    border-radius: 15px;
+    color: white;
+    font-family: var(--font-main);
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--dark);
+    transition: all 0.1s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.claim-daily-main-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--dark);
+}
+
+.claim-daily-main-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--dark);
+}
+
+.claim-daily-main-btn:disabled {
+    background: #ccc;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+.claim-daily-main-btn:not(:disabled):active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 var(--dark);
+}
+
+.claim-daily-main-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    box-shadow: 0 4px 0 #95a5a6;
+    transform: translateY(2px);
+    opacity: 0.8;
+}
+
+/* Individual Daily Card Overrides for Drawer */
+.day-card-infinite {
+    min-width: unset; /* Override previous */
+    width: 100%;
+    height: 180px; /* Increased to accommodate label */
+    background: white;
+    border: 4px solid var(--dark);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s;
+    padding: 10px;
+    gap: 5px;
+}
+
+.day-label {
+    font-size: 1rem;
+    font-weight: 900;
+    color: #8e44ad;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+
+.day-icon-large {
+    font-size: 2.2rem;
+    color: var(--primary);
+    margin: 5px 0;
+}
+
+.jackpot-gold {
+    color: #f1c40f !important;
+    filter: drop-shadow(0 0 10px rgba(241, 196, 15, 0.5));
+}
+
+.day-card-infinite .reward-main {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #8e44ad;
+    text-align: center;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+/* Jackpot Specific Positioning */
+.jackpot-card .day-label {
+    margin-top: 15px; /* Move Day 7 down */
+}
+
+.jackpot-card .reward-main {
+    margin-top: -10px; /* Move JACKPOT up more */
+    font-size: 1.4rem; /* Make it pop more */
+}
+
+.day-card-infinite.already-claimed {
+    background: #f1f2f6;
+    opacity: 0.6;
+    border-color: #ced4da;
+}
+
+.day-card-infinite.active-ready {
+    border-color: #9b59b6;
+    background: #fdfaff;
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(155, 89, 182, 0.3);
+}
+
+.day-card-infinite.active-locked {
+    background: #fcfcfc;
+    border-color: #ddd;
+}
+
+.day-card-infinite.active-ready .reward-main {
+    color: #8e44ad;
+    animation: textPulse 1s infinite alternate;
+}
+
+@keyframes textPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
+
+/* Playtime Drawer Styles */
+.playtime-drawer {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-100%);
+    width: 800px; /* Much wider for landscape */
+    max-width: 95vw;
+    height: 450px; /* Shorter height */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 255, 0.98));
+    border: 4px solid var(--dark);
+    border-left: none;
+    border-radius: 0 25px 25px 0;
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 10px 10px 0 rgba(0,0,0,0.2), 0 0 20px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+}
+
+.playtime-drawer.open {
+    transform: translateY(-50%) translateX(0);
+}
+
+.drawer-header {
+    background: #3498db;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid var(--dark);
+    border-radius: 0 21px 0 0;
+}
+
+.drawer-title-text {
+    color: white;
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 900;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    letter-spacing: 1px;
+}
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: #3498db #eee;
+}
+
+.drawer-body::-webkit-scrollbar { display: none; }
+
+.playtime-list {
+    display: flex;
+    flex-wrap: wrap; /* Allow cards to wrap */
+    flex-direction: row; 
+    gap: 20px;
+    padding-bottom: 10px;
+    justify-content: center;
+}
+
+.playtime-reward-card {
+    background: #fff;
+    border: 4px solid #eee;
+    border-radius: 20px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 170px; /* Fixed width for cards in grid */
+    text-align: center;
+    gap: 12px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    animation: slideInReward 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+.playtime-icon-large {
+    font-size: 2.5rem;
+    color: #3498db;
+    margin-bottom: 5px;
+}
+
+.playtime-info-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.playtime-title-mini {
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--dark);
+}
+
+.playtime-reward-mini {
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #27ae60;
+}
+
+.playtime-claim-btn-mini {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: 3px solid var(--dark);
+    font-family: var(--font-main);
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #3498db;
+    color: white;
+}
+
+@keyframes slideInReward {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.playtime-reward-card.ready {
+    border-color: #3498db;
+    background: #f0f9ff;
+    animation: cardPulse 2s infinite;
+    z-index: 1;
+}
+
+.playtime-reward-card.claimed {
+    opacity: 0.6;
+    background: #fdfdfd;
+    filter: grayscale(0.5);
+}
+
+.playtime-reward-card.locked {
+    background: #fafafa;
+}
+
+@keyframes cardPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(52, 152, 219, 0); }
+    50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(52, 152, 219, 0.2); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(52, 152, 219, 0); }
+}
+
+.reward-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.6rem;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+}
+
+.reward-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.reward-label {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--dark);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+}
+
+.reward-amount {
+    display: flex;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.reward-gems { color: #9b59b6; display: flex; align-items: center; gap: 4px; }
+.reward-money { color: #27ae60; display: flex; align-items: center; gap: 4px; }
+
+.reward-progress-container {
+    height: 12px;
+    background: #eee;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #fff;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.reward-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #5dade2, #3498db);
+    background-size: 200% 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 6px;
+    animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.claim-reward-btn {
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    background: #3498db;
+    color: white;
+    font-family: var(--font-main);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #2980b9;
+    text-transform: uppercase;
+}
+
+.claim-reward-btn:disabled {
+    background: #ccc;
+    box-shadow: 0 4px 0 #bbb;
+    cursor: not-allowed;
+}
+
+.claim-reward-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2980b9;
+    background: #2980b9;
+}
+
+.claim-reward-btn:not(:disabled):active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2980b9;
+}
+
+.reward-status-tag {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #eee;
+    color: #888;
+}
+
+.playtime-reward-card.ready .reward-status-tag {
+    background: #3498db;
+    color: white;
+}
+
+.playtime-reward-card.ready .claim-reward-btn {
+    animation: pulseButton 1s infinite alternate;
+}
+
+@keyframes pulseButton {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+/* Stagger card animations */
+.playtime-reward-card:nth-child(1) { animation-delay: 0.05s; }
+.playtime-reward-card:nth-child(2) { animation-delay: 0.1s; }
+.playtime-reward-card:nth-child(3) { animation-delay: 0.15s; }
+.playtime-reward-card:nth-child(4) { animation-delay: 0.2s; }
+.playtime-reward-card:nth-child(5) { animation-delay: 0.25s; }
+.playtime-reward-card:nth-child(6) { animation-delay: 0.3s; }
+.playtime-reward-card:nth-child(7) { animation-delay: 0.35s; }
+.playtime-reward-card:nth-child(8) { animation-delay: 0.4s; }
+.playtime-reward-card:nth-child(9) { animation-delay: 0.45s; }
+.playtime-reward-card:nth-child(10) { animation-delay: 0.5s; }
+
+.playtime-reward-card.claimed .reward-status-tag {
+    background: #27ae60;
+    color: white;
 }
