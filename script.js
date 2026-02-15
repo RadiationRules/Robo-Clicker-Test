@@ -122,6 +122,7 @@ class RoboClicker {
             money: 0,
             gems: 0, 
             totalMoney: 0,
+            runMoney: 0, // Money earned this run (resets on rebirth)
             totalClicks: 0, 
             clickPower: 1,
             autoClickPower: 0,
@@ -923,6 +924,8 @@ class RoboClicker {
     addMoney(amount) {
         this.gameState.money += amount;
         this.gameState.totalMoney += amount;
+        if (typeof this.gameState.runMoney === 'undefined') this.gameState.runMoney = 0;
+        this.gameState.runMoney += amount;
         
         if (Math.random() < 0.1) this.checkTaskProgress();
     }
@@ -1457,6 +1460,7 @@ class RoboClicker {
         // RESET GAME STATE
         // Reset Money (Keep Gems)
         this.gameState.money = 0;
+        this.gameState.runMoney = 0;
         this.gameState.clickPower = 1;
         this.gameState.autoClickPower = 0;
         
@@ -1472,6 +1476,25 @@ class RoboClicker {
              this.gameState.drones = [];
         }
         this.gameState.droneLevel = 1;
+
+        // Reset Boss Progress
+        if (this.gameState.boss) {
+            this.gameState.boss.level = 1;
+            this.gameState.boss.hp = 100;
+            this.gameState.boss.maxHp = 100;
+            this.gameState.boss.lockedUntil = 0;
+            this.gameState.boss.clickDamage = 1;
+            this.gameState.boss.critChanceLevel = 0;
+            this.gameState.boss.autoShootLevel = 0;
+            this.gameState.boss.damageUpgradeLevel = 0;
+            this.gameState.boss.autoShootInterval = null;
+            this.gameState.boss.criticalTargetTimer = null;
+        }
+
+        // Reset Playtime Rewards
+        this.gameState.sessionPlaytime = 0;
+        this.gameState.claimedPlaytimeRewards = [];
+        this.gameState.lastPlaytimeReset = Date.now();
         
         // Reset Evolution - DISABLED per user request (Persistence)
         // this.gameState.evolution.stage = 0;
@@ -2397,9 +2420,9 @@ class RoboClicker {
         const now = Date.now();
         
         // Start Cooldown for button-based ads
-        if (type === 'turbo' || type === 'auto' || type === 'lucky' || type === 'auto_clicker') {
-            this.startAdCooldown(type);
-        }
+        // if (type === 'turbo' || type === 'auto' || type === 'lucky' || type === 'auto_clicker') {
+        //    this.startAdCooldown(type);
+        // }
 
         if (type === 'turbo') {
             // 1 Minute Boost
@@ -2698,16 +2721,16 @@ class RoboClicker {
         if (dayInWeek === 2) return 'mega';
         if (dayInWeek === 5) return 'buff';
         if (dayInWeek === 3) return 'gems';
+        if (dayInWeek === 1) return 'gems'; // Day 1 is now Gems
         return 'cash';
     }
 
     getDailyRewardValue(dayIndex, basePower) {
         const type = this.getDailyRewardType(dayIndex);
         
-        // Day 1 special reward: 10x highest money reached, min $10,000
+        // Day 1 special reward: 100 Gems
         if (dayIndex === 0) {
-            const highestMoney = this.gameState.totalMoney || 0;
-            return Math.max(10000, highestMoney * 10);
+            return 100;
         }
 
         const cashScale = this.gameState.money * 0.40;
@@ -3876,7 +3899,8 @@ class RoboClicker {
                 card.dataset.id = reward.id;
                 
                 // Calculate initial money to prevent flash of $0
-                const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+                const runMoney = (typeof this.gameState.runMoney !== 'undefined') ? this.gameState.runMoney : (this.gameState.totalMoney || 0);
+                const baseMoney = Math.max(100, runMoney);
                 const moneyReward = baseMoney * 2;
 
                 card.innerHTML = `
@@ -3913,8 +3937,9 @@ class RoboClicker {
             const isReady = this.gameState.sessionPlaytime >= reward.time;
             const progress = Math.min(100, (this.gameState.sessionPlaytime / reward.time) * 100);
             
-            // Dynamic Money: 2x Max Money Reached (Total Money)
-            const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+            // Dynamic Money: 2x Run Money
+            const runMoney = (typeof this.gameState.runMoney !== 'undefined') ? this.gameState.runMoney : (this.gameState.totalMoney || 0);
+            const baseMoney = Math.max(100, runMoney);
             const moneyReward = baseMoney * 2;
 
             // Update classes
@@ -3963,8 +3988,9 @@ class RoboClicker {
         if (!reward || this.gameState.claimedPlaytimeRewards.includes(rewardId)) return;
 
         if (this.gameState.sessionPlaytime >= reward.time) {
-            // Calculate dynamic money reward: 2x Total Money
-            const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+            // Calculate dynamic money reward: 2x Run Money
+            const runMoney = (typeof this.gameState.runMoney !== 'undefined') ? this.gameState.runMoney : (this.gameState.totalMoney || 0);
+            const baseMoney = Math.max(100, runMoney);
             const moneyReward = baseMoney * 2;
             
             // Add rewards
