@@ -89,6 +89,7 @@ const TASKS_DATA = generateTasks();
 const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 
 const GEM_SHOP_ITEMS = {
+    'perm_energy_2x': { name: "Energy Core", desc: "Energy Bar Fills 2X Faster", cost: 100, type: 'perm_buff', mult: 2, icon: 'fa-charging-station' },
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_playtime_speed': { name: "Time Warp", desc: "Permanent 2X Playtime Rewards Speed!", cost: 400, type: 'perm_buff', mult: 2, icon: 'fa-clock' },
@@ -776,7 +777,11 @@ class RoboClicker {
             this.els.hero.classList.add('click-shake');
 
             // Increase Heat - EASIER TO FILL
-            this.heat = Math.min(100, (this.heat || 0) + 8); // Adjusted to be harder (was 12)
+            let heatIncrease = 8;
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['perm_energy_2x']) {
+                heatIncrease *= 2;
+            }
+            this.heat = Math.min(100, (this.heat || 0) + heatIncrease);
             
             // Add Shake to Robot
             this.els.hero.classList.remove('shake');
@@ -1545,9 +1550,9 @@ class RoboClicker {
         const dailyBtn = document.getElementById('daily-badge');
         if (dailyBtn) {
             const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
+            const halfDay = 12 * 60 * 60 * 1000;
             const timeSince = now - this.gameState.lastDailyClaim;
-            if (timeSince > oneDay) {
+            if (timeSince > halfDay) {
                 dailyBtn.classList.remove('hidden');
             } else {
                 dailyBtn.classList.add('hidden');
@@ -2591,13 +2596,13 @@ class RoboClicker {
     // --- DAILY REWARDS (INFINITE SCROLL) ---
     checkDailyReward(autoOpen = true) {
         const now = Date.now();
-        const oneDay = 24 * 60 * 60 * 1000;
+        const halfDay = 12 * 60 * 60 * 1000;
         const threeMinutes = 3 * 60 * 1000;
         const timeSince = now - this.gameState.lastDailyClaim;
         const playtimeSinceStart = now - this.gameState.startTime;
 
-        // Reset streak if more than 48 hours passed
-        if (timeSince > oneDay * 2 && this.gameState.lastDailyClaim !== 0) {
+        // Reset streak if more than 24 hours passed
+        if (timeSince > halfDay * 2 && this.gameState.lastDailyClaim !== 0) {
             this.gameState.dailyStreak = 0;
         }
 
@@ -2607,7 +2612,7 @@ class RoboClicker {
         if (currentStreak === 0 && this.gameState.lastDailyClaim === 0) {
             isClaimable = playtimeSinceStart >= threeMinutes;
         } else {
-            isClaimable = (this.gameState.lastDailyClaim !== 0) && (timeSince > oneDay);
+            isClaimable = (this.gameState.lastDailyClaim !== 0) && (timeSince > halfDay);
         }
         
         if (this.els.dailyGrid) {
@@ -2661,6 +2666,14 @@ class RoboClicker {
                     card.style.animation = `cardSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${i * 0.05}s`;
                     this.els.dailyGrid.appendChild(card);
                 }
+
+                // Scroll to current day
+                setTimeout(() => {
+                    const activeCard = this.els.dailyGrid.querySelector('.active-ready, .active-locked');
+                    if (activeCard) {
+                        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                }, 100);
             }
             
             // Update states for existing cards
@@ -2702,7 +2715,7 @@ class RoboClicker {
             if (currentStreak === 0 && this.gameState.lastDailyClaim === 0) {
                 remaining = Math.max(0, threeMinutes - playtimeSinceStart);
             } else {
-                remaining = Math.max(0, oneDay - timeSince);
+                remaining = Math.max(0, halfDay - timeSince);
             }
             
             if (this.els.claimDailyBtn) {
@@ -2749,7 +2762,11 @@ class RoboClicker {
                     cash: Math.floor(baseVal * 3 * streakBonus),
                     gems: Math.floor(50 + (dayIndex * 10))
                 };
-            case 'gems': return Math.floor(25 + (dayIndex * 5));
+            case 'gems':
+                if (dayIndex === 2) {
+                    return 300; // Day 3 reward
+                }
+                return Math.floor(25 + (dayIndex * 5));
             case 'buff': return 120; // 120 seconds
             default: return Math.floor(baseVal * streakBonus);
         }
@@ -2834,7 +2851,7 @@ class RoboClicker {
         if (isFirstDay) {
             nextTime = this.gameState.startTime + (3 * 60 * 1000);
         } else {
-            nextTime = this.gameState.lastDailyClaim + (24 * 60 * 60 * 1000);
+            nextTime = this.gameState.lastDailyClaim + (12 * 60 * 60 * 1000);
         }
         
         const diff = nextTime - now;

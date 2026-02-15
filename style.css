@@ -4625,32 +4625,17 @@ body {
     background: #FFD93D;
 }
 
-#daily-rewards-modal.daily-compact h2 {
-    font-family: var(--font-main);
-    font-size: 3rem;
-    color: #fff;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    margin-bottom: 15px;
-    text-shadow: 
-        3px 3px 0 #000,
-        -3px -3px 0 #000,
-        3px -3px 0 #000,
-        -3px 3px 0 #000,
-        0 6px 0 #000,
-        0 10px 20px rgba(0,0,0,0.4);
-    -webkit-text-stroke: 1px rgba(0,0,0,0.2);
-}
+/* Removed redundant title styling */
 
 .daily-list-landscape {
     display: flex;
     flex-direction: row;
     gap: 12px;
-    padding: 10px;
+    padding: 15px;
     overflow-x: auto;
     scrollbar-width: none;
-    justify-content: center;
+    justify-content: flex-start;
+    scroll-behavior: smooth;
 }
 
 .daily-list-landscape::-webkit-scrollbar { display: none; }
@@ -6198,17 +6183,34 @@ body {
 
 .daily-list::-webkit-scrollbar { display: none; }
 
-/* Enhanced Drawer Title for Daily Rewards */
+#daily-rewards-modal .modal-header {
+    background: transparent;
+    border-bottom: none;
+    padding: 10px 25px;
+    justify-content: center;
+    position: relative;
+}
+
+#daily-rewards-modal .close-modal-btn {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .drawer-title-daily {
-    background: linear-gradient(90deg, #8e44ad, #9b59b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-size: 2rem !important;
+    font-family: var(--font-main);
+    font-size: 2.8rem !important;
+    color: #fff;
+    text-align: center;
     text-transform: uppercase;
-    text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
     letter-spacing: 2px;
-    filter: drop-shadow(0 2px 0 rgba(142, 68, 173, 0.3));
+    margin: 0;
+    filter: drop-shadow(0 4px 0 rgba(0,0,0,0.3));
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: white;
 }
 
 .claim-daily-main-btn {
