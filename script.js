@@ -91,6 +91,7 @@ const DRONE_COSTS = [500, 50000, 5000000, 500000000, 50000000000];
 const GEM_SHOP_ITEMS = {
     'perm_auto_2x': { name: "Overclock Chip", desc: "Permanent 2x Drone Speed", cost: 200, type: 'perm_buff', mult: 2, icon: 'fa-microchip' },
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
+    'perm_playtime_speed': { name: "Time Warp", desc: "Permanent 2X Playtime Rewards Speed!", cost: 400, type: 'perm_buff', mult: 2, icon: 'fa-clock' },
     'golden_drops': { name: "Golden Drops", desc: "Golden Drops give 2x more money", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-coins' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 750, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
@@ -1082,7 +1083,14 @@ class RoboClicker {
             const canAfford = this.gameState.gems >= item.cost;
             
             const div = document.createElement('div');
-            div.className = `upgrade-item ${canAfford && !isOwned ? 'can-afford' : ''} ${key === 'mega_drone' ? 'exclusive-item' : ''} ${isOwned ? 'item-owned' : ''}`;
+            
+            // Custom Classes for Special Items
+            let extraClass = '';
+            if (key === 'mega_drone') {
+                extraClass = 'op-item';
+            }
+
+            div.className = `upgrade-item ${canAfford && !isOwned ? 'can-afford' : ''} ${extraClass} ${isOwned ? 'item-owned' : ''}`;
             
             let btnText = `💎 ${item.cost}`;
             if (isOwned) btnText = "OWNED";
@@ -3747,13 +3755,34 @@ class RoboClicker {
             this._lastPlaytimeTick = now;
         }
 
+        // 12-Hour Reset Check
+        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+        if (!this.gameState.lastPlaytimeReset) {
+            this.gameState.lastPlaytimeReset = now;
+        }
+        if (now - this.gameState.lastPlaytimeReset > TWELVE_HOURS) {
+            this.gameState.sessionPlaytime = 0;
+            this.gameState.claimedPlaytimeRewards = [];
+            this.gameState.lastPlaytimeReset = now;
+            // Force re-render of the grid to show locked states
+            if (this.els.playtimeRewardsGrid) this.els.playtimeRewardsGrid.innerHTML = '';
+            this.saveGame();
+            console.log("Playtime rewards reset (12h cycle)");
+        }
+
         const dt = (now - this._lastPlaytimeTick) / 1000;
         this._lastPlaytimeTick = now;
 
         // Only increment if visible
         // We also check for massive dt spikes (e.g. > 5s) just in case visibility handler missed
         if (!document.hidden && dt < 5) {
-            this.gameState.sessionPlaytime = (this.gameState.sessionPlaytime || 0) + dt;
+            // Apply Time Warp Multiplier
+            let multiplier = 1;
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['perm_playtime_speed']) {
+                multiplier = 2;
+            }
+
+            this.gameState.sessionPlaytime = (this.gameState.sessionPlaytime || 0) + (dt * multiplier);
         }
         
         // Update notification badge
@@ -3845,14 +3874,24 @@ class RoboClicker {
                 const card = document.createElement('div');
                 card.className = 'playtime-reward-card locked';
                 card.dataset.id = reward.id;
+                
+                // Calculate initial money to prevent flash of $0
+                const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+                const moneyReward = baseMoney * 2;
+
                 card.innerHTML = `
                     <div class="playtime-icon-large" style="color: ${reward.color}">
                         <i class="fa-solid ${reward.icon}"></i>
                     </div>
                     <div class="playtime-info-mini">
                         <div class="playtime-title-mini">${reward.label}</div>
-                        <div class="playtime-reward-mini">
-                            <i class="fa-solid fa-gem"></i> ${reward.reward.gems} + <span class="money-val">$0</span>
+                        <div class="playtime-reward-pills">
+                            <div class="reward-pill pill-gems">
+                                <i class="fa-solid fa-gem"></i> ${reward.reward.gems}
+                            </div>
+                            <div class="reward-pill pill-money">
+                                <i class="fa-solid fa-money-bill"></i> <span class="money-val">$${this.formatNumber(moneyReward)}</span>
+                            </div>
                         </div>
                         <div class="reward-progress-container">
                             <div class="reward-progress-bar"></div>
@@ -3873,7 +3912,10 @@ class RoboClicker {
             const isClaimed = this.gameState.claimedPlaytimeRewards.includes(reward.id);
             const isReady = this.gameState.sessionPlaytime >= reward.time;
             const progress = Math.min(100, (this.gameState.sessionPlaytime / reward.time) * 100);
-            const moneyReward = Math.max(100, Math.floor((this.gameState.totalMoney || 1000) * reward.reward.multiplier));
+            
+            // Dynamic Money: 2x Max Money Reached (Total Money)
+            const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+            const moneyReward = baseMoney * 2;
 
             // Update classes
             const statusClass = isClaimed ? 'claimed' : (isReady ? 'ready' : 'locked');
@@ -3921,8 +3963,9 @@ class RoboClicker {
         if (!reward || this.gameState.claimedPlaytimeRewards.includes(rewardId)) return;
 
         if (this.gameState.sessionPlaytime >= reward.time) {
-            // Calculate dynamic money reward
-            const moneyReward = Math.max(100, Math.floor((this.gameState.totalMoney || 1000) * reward.reward.multiplier));
+            // Calculate dynamic money reward: 2x Total Money
+            const baseMoney = Math.max(100, this.gameState.totalMoney || 0);
+            const moneyReward = baseMoney * 2;
             
             // Add rewards
             this.gameState.gems += reward.reward.gems;
