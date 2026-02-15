@@ -5089,11 +5089,32 @@ body {
 
 .boss-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
     margin-bottom: 20px;
     z-index: 10;
+}
+
+.boss-close-center {
+    position: absolute;
+    top: 0px;
+    left: 58%;
+    transform: translateX(-50%);
+    z-index: 20000;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    width: 55px !important;
+    height: 55px !important;
+    font-size: 2.2rem !important;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.boss-close-center:hover {
+    background: #ff4757 !important;
+    border-color: #ff6b81 !important;
+    transform: translateX(-50%) rotate(90deg) scale(1.1);
 }
 
 .boss-stats-top {
