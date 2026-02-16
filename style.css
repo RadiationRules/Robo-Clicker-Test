@@ -1734,6 +1734,7 @@ body {
     flex: 1; /* Take up remaining space */
 }
 
+
 /* ROBOT TIERS - SMOOTH FUTURE (Cartoony & Cool) */
 
 /* Base Robot Structure - INCREASED SIZE */
@@ -1749,6 +1750,17 @@ body {
 
 .hero-robot:active, .hero-robot.active-click {
     transform: scale(0.95);
+}
+
+.hero-robot.bounce-animation {
+    animation: robotBounce 0.2s ease-out;
+}
+
+@keyframes robotBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95) translateY(5px); } /* Squish down a bit */
+    75% { transform: scale(1.02) translateY(-2px); } /* Slight overshoot up */
+    100% { transform: scale(1) translateY(0); }
 }
 
 /* ----------------------------------------------------

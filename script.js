@@ -95,8 +95,8 @@ const GEM_SHOP_ITEMS = {
     'perm_playtime_speed': { name: "Time Warp", desc: "Permanent 2X Playtime Rewards Speed!", cost: 400, type: 'perm_buff', mult: 2, icon: 'fa-clock' },
     'golden_drops': { name: "Golden Drops", desc: "Golden Drops give 2x more money", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-coins' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 700, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
-    'chrono_shard': { name: "Chrono Shard", desc: "Permanently reduces Power Up Cooldowns by 50%", cost: 800, type: 'perm_buff', mult: 0.5, icon: 'fa-hourglass-half' },
-    'duration_extender': { name: "Duration Extender", desc: "Permanently increases all Power Up durations by 50%", cost: 900, type: 'perm_buff', mult: 0.5, icon: 'fa-stopwatch' },
+    'chrono_shard': { name: "Chrono Shard", desc: "Increases Power Up duration by 2X", cost: 800, type: 'perm_buff', mult: 2.0, icon: 'fa-hourglass-half' },
+    'quantum_cache': { name: "Quantum Cache", desc: "Permanently boosts Offline Earnings by 2X", cost: 900, type: 'perm_buff', mult: 1.0, icon: 'fa-box-archive' },
     'critical_boost': { name: "Critical Boost", desc: "Every click is a critical hit!", cost: 1000, type: 'perm_buff', mult: 0.05, icon: 'fa-bullseye' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1500, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
@@ -749,7 +749,7 @@ class RoboClicker {
             this.spawnBoltParticle(robotX, robotY);
             
             // 3. Robot Bounce
-            this.animateHero();
+
             
         }, 100);
     }
@@ -785,10 +785,10 @@ class RoboClicker {
             this.isIdle = false;
             if (this.els.idlePrompt) this.els.idlePrompt.classList.add('hidden');
             
-            // Satisfying Shake on Click
-            this.els.hero.classList.remove('click-shake');
+            // Apply bounce animation
+            this.els.hero.classList.remove('bounce-animation');
             void this.els.hero.offsetWidth; // Force reflow
-            this.els.hero.classList.add('click-shake');
+            this.els.hero.classList.add('bounce-animation');
 
             // Increase Heat - EASIER TO FILL
             let heatIncrease = 8;
@@ -796,11 +796,6 @@ class RoboClicker {
                 heatIncrease *= 2;
             }
             this.heat = Math.min(100, (this.heat || 0) + heatIncrease);
-            
-            // Add Shake to Robot
-            this.els.hero.classList.remove('shake');
-            void this.els.hero.offsetWidth; // Force reflow
-            this.els.hero.classList.add('shake');
             
             // Track Total Clicks
             this.gameState.totalClicks = (this.gameState.totalClicks || 0) + 1;
@@ -886,7 +881,7 @@ class RoboClicker {
                 this.spawnTutorialSplash(event.clientX, event.clientY);
             }
 
-            this.animateHero();
+
             
             if (isMidas) {
                 this.spawnDamageNumber("MIDAS!", event.clientX, event.clientY - 80, '#FFD700');
@@ -2251,12 +2246,6 @@ class RoboClicker {
         setTimeout(() => el.remove(), 2000);
     }
 
-    animateHero() {
-        this.els.hero.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            this.els.hero.style.transform = 'scale(1)';
-        }, 50);
-    }
 
     triggerRobotPersonality() {
         // Only if not currently animating (check classes)
@@ -2415,12 +2404,6 @@ class RoboClicker {
         }
 
         let duration = 180000; // 3 minutes (180,000 milliseconds)
-        
-        // Apply Chrono Shard reduction if owned
-        if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['chrono_shard']) {
-            const reductionFactor = GEM_SHOP_ITEMS.chrono_shard.mult; // 0.25 for 25% reduction
-            duration *= (1 - reductionFactor); // Reduce duration by 25%
-        }
         const cooldownEndTime = Date.now() + duration;
         this.gameState.adCooldowns[type] = cooldownEndTime; // Store in persistent gameState
         this.saveGame(); // Save game state immediately
@@ -2468,8 +2451,9 @@ class RoboClicker {
         if (type === 'turbo') {
             // 1 Minute Boost
             let turboDuration = 60000; // 1 Minute Boost
-            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
-                turboDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['chrono_shard']) {
+                turboDuration *= GEM_SHOP_ITEMS.chrono_shard.mult; // Apply 2x from Chrono Shard
             }
             this.adManager.boosts['turbo'] = now + turboDuration;
             msg = "TURBO SURGE: 3x Income for 1 Minute!";
@@ -2477,8 +2461,9 @@ class RoboClicker {
         } else if (type === 'auto') {
             // 30 Seconds Boost
             let autoDuration = 30000; // 30 Seconds Boost
-            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
-                autoDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['chrono_shard']) {
+                autoDuration *= GEM_SHOP_ITEMS.chrono_shard.mult; // Apply 2x from Chrono Shard
             }
             this.adManager.boosts['auto'] = now + autoDuration;
             msg = "OVERCLOCK: 10x Speed for 30 Seconds!";
@@ -2495,8 +2480,9 @@ class RoboClicker {
         } else if (type === 'auto_clicker') {
             // Auto Clicker Ad: 30s of clicks
             let autoClickerDuration = 30000; // Auto Clicker Ad: 30s of clicks
-            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
-                autoClickerDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['chrono_shard']) {
+                autoClickerDuration *= GEM_SHOP_ITEMS.chrono_shard.mult; // Apply 2x from Chrono Shard
             }
             this.adManager.boosts['auto_clicker'] = now + autoClickerDuration;
             msg = "AUTO CLICKER: Bot Swarm Activated!";
@@ -2624,7 +2610,12 @@ class RoboClicker {
             }
 
             const totalPerSec = droneIncomePerSec * globalMult;
-            const totalOffline = Math.floor(totalPerSec * seconds * 0.5); // 50% efficiency for offline
+            let totalOffline = Math.floor(totalPerSec * seconds * 0.5); // 50% efficiency for offline
+            
+            // Apply Quantum Cache boost if owned
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['quantum_cache']) {
+                totalOffline *= (1 + GEM_SHOP_ITEMS.quantum_cache.mult); // 100% boost means 2x
+            }
             
             if (totalOffline > 0) {
                 this.adManager.pendingOfflineAmount = totalOffline;
