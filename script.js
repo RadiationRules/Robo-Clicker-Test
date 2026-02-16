@@ -94,7 +94,9 @@ const GEM_SHOP_ITEMS = {
     'perm_click_2x': { name: "Titanium Finger", desc: "Permanent 2x Click Value", cost: 300, type: 'perm_buff', mult: 2, icon: 'fa-hand-fist' },
     'perm_playtime_speed': { name: "Time Warp", desc: "Permanent 2X Playtime Rewards Speed!", cost: 400, type: 'perm_buff', mult: 2, icon: 'fa-clock' },
     'golden_drops': { name: "Golden Drops", desc: "Golden Drops give 2x more money", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-coins' },
-    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 750, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
+    'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 700, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
+    'chrono_shard': { name: "Chrono Shard", desc: "Permanently reduces Power Up Cooldowns by 50%", cost: 800, type: 'perm_buff', mult: 0.5, icon: 'fa-hourglass-half' },
+    'duration_extender': { name: "Duration Extender", desc: "Permanently increases all Power Up durations by 50%", cost: 900, type: 'perm_buff', mult: 0.5, icon: 'fa-stopwatch' },
     'critical_boost': { name: "Critical Boost", desc: "Every click is a critical hit!", cost: 1000, type: 'perm_buff', mult: 0.05, icon: 'fa-bullseye' },
     'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1500, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
@@ -2412,7 +2414,13 @@ class RoboClicker {
             clearInterval(this._adCooldownIntervals[type]);
         }
 
-        const duration = 180000; // 3 minutes (180,000 milliseconds)
+        let duration = 180000; // 3 minutes (180,000 milliseconds)
+        
+        // Apply Chrono Shard reduction if owned
+        if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['chrono_shard']) {
+            const reductionFactor = GEM_SHOP_ITEMS.chrono_shard.mult; // 0.25 for 25% reduction
+            duration *= (1 - reductionFactor); // Reduce duration by 25%
+        }
         const cooldownEndTime = Date.now() + duration;
         this.gameState.adCooldowns[type] = cooldownEndTime; // Store in persistent gameState
         this.saveGame(); // Save game state immediately
@@ -2459,12 +2467,20 @@ class RoboClicker {
 
         if (type === 'turbo') {
             // 1 Minute Boost
-            this.adManager.boosts['turbo'] = now + 60000;
+            let turboDuration = 60000; // 1 Minute Boost
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
+                turboDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+            }
+            this.adManager.boosts['turbo'] = now + turboDuration;
             msg = "TURBO SURGE: 3x Income for 1 Minute!";
             // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'auto') {
             // 30 Seconds Boost
-            this.adManager.boosts['auto'] = now + 30000;
+            let autoDuration = 30000; // 30 Seconds Boost
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
+                autoDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+            }
+            this.adManager.boosts['auto'] = now + autoDuration;
             msg = "OVERCLOCK: 10x Speed for 30 Seconds!";
              // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'lucky') {
@@ -2478,7 +2494,11 @@ class RoboClicker {
             return; // Skip default alert
         } else if (type === 'auto_clicker') {
             // Auto Clicker Ad: 30s of clicks
-            this.adManager.boosts['auto_clicker'] = now + 30000;
+            let autoClickerDuration = 30000; // Auto Clicker Ad: 30s of clicks
+            if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['duration_extender']) {
+                autoClickerDuration *= (1 + GEM_SHOP_ITEMS.duration_extender.mult);
+            }
+            this.adManager.boosts['auto_clicker'] = now + autoClickerDuration;
             msg = "AUTO CLICKER: Bot Swarm Activated!";
             // this.toggleBonusDrawer(); // Removed per request
         } else if (type === 'offline_2x') {
