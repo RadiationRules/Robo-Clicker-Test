@@ -95,7 +95,8 @@ const GEM_SHOP_ITEMS = {
     'perm_playtime_speed': { name: "Time Warp", desc: "Permanent 2X Playtime Rewards Speed!", cost: 400, type: 'perm_buff', mult: 2, icon: 'fa-clock' },
     'golden_drops': { name: "Golden Drops", desc: "Golden Drops give 2x more money", cost: 500, type: 'perm_buff', mult: 2, icon: 'fa-coins' },
     'perm_evo_speed': { name: "Evo Accelerator", desc: "Permanent 2x Evolution Speed", cost: 750, type: 'perm_buff', mult: 2, icon: 'fa-dna' },
-    'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1000, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
+    'critical_boost': { name: "Critical Boost", desc: "Every click is a critical hit!", cost: 1000, type: 'perm_buff', mult: 0.05, icon: 'fa-bullseye' },
+    'mega_drone': { name: "MEGA DRONE", desc: "Deploys a Mega Drone!", cost: 1500, type: 'perm_mega_drone', icon: 'fa-jet-fighter-up' }
 };
 
 const AD_VARIANTS = [
@@ -161,6 +162,9 @@ class RoboClicker {
                 upgrades: {} // { 'id': level }
             },
 
+            // Ad Cooldowns
+            adCooldowns: {},
+
             // Upgrades with descriptions - EXCLUSIVE & FUN
             upgrades: {
                 'Click Value': { level: 0, baseCost: 10, basePower: 1, name: "Click Value", desc: "Increases Click Value", type: "click" },
@@ -217,6 +221,7 @@ class RoboClicker {
         this.els = {};
         
         this.isHardReset = false; // Flag to prevent save on reset
+        this._adCooldownIntervals = {}; // Store cooldown intervals to clear them
         
         // Tab State
         this.activeTab = 'upgrades';
@@ -275,6 +280,13 @@ class RoboClicker {
         this.checkDailyReward(false); 
         this.applyRobotVisuals();
         
+        // Re-apply any active ad cooldowns to buttons on load
+        for (const type in this.gameState.adCooldowns) {
+            if (this.gameState.adCooldowns[type] > Date.now()) {
+                this.startAdCooldown(type);
+            }
+        }
+
         // Offline Earnings Check
         this.checkOfflineEarnings();
 
@@ -803,9 +815,15 @@ class RoboClicker {
         }
 
         // Critical Chance Logic
-        const critUpgrade = this.gameState.upgrades['crit_money'] || { level: 0, basePower: 0 }; 
-        const critChance = (critUpgrade.level * critUpgrade.basePower) / 100;
-        let isCrit = Math.random() < critChance;
+        let isCrit = false;
+        // If Critical Boost is owned, every click is critical
+        if (this.gameState.gemUpgrades && this.gameState.gemUpgrades['critical_boost']) {
+            isCrit = true;
+        } else {
+            const critUpgrade = this.gameState.upgrades['crit_money'] || { level: 0, basePower: 0 }; 
+            const critChance = (critUpgrade.level * critUpgrade.basePower) / 100;
+            isCrit = Math.random() < critChance;
+        }
         
         let amount = this.getClickPower(); // Base Click Value
         
@@ -2349,8 +2367,8 @@ class RoboClicker {
     watchRewardedAd(type, callbacks = {}) {
         // Cooldown Check
         const now = Date.now();
-        if (this.adManager.cooldowns && this.adManager.cooldowns[type]) {
-            if (now < this.adManager.cooldowns[type]) {
+        if (this.gameState.adCooldowns && this.gameState.adCooldowns[type]) {
+            if (now < this.gameState.adCooldowns[type]) {
                 // If it's a button click, the UI should be disabled, but for safety:
                 // console.log("Reward is on cooldown!");
                 return;
@@ -2389,10 +2407,16 @@ class RoboClicker {
     }
 
     startAdCooldown(type) {
-        if (!this.adManager.cooldowns) this.adManager.cooldowns = {};
-        const duration = 180000; // 3 minutes
-        this.adManager.cooldowns[type] = Date.now() + duration;
-        
+        // Clear any existing interval for this type to prevent duplicates
+        if (this._adCooldownIntervals[type]) {
+            clearInterval(this._adCooldownIntervals[type]);
+        }
+
+        const duration = 180000; // 3 minutes (180,000 milliseconds)
+        const cooldownEndTime = Date.now() + duration;
+        this.gameState.adCooldowns[type] = cooldownEndTime; // Store in persistent gameState
+        this.saveGame(); // Save game state immediately
+
         // Find button - Robust Selector (Data Attribute -> Onclick Fallback)
         let btn = document.querySelector(`.bonus-btn[data-ad-type="${type}"]`);
         if (!btn) {
@@ -2404,10 +2428,15 @@ class RoboClicker {
             btn.disabled = true;
             btn.classList.add('cooldown-active');
             
+            // Set up interval to update timer and clear cooldown
             const interval = setInterval(() => {
-                const remaining = this.adManager.cooldowns[type] - Date.now();
+                const remaining = this.gameState.adCooldowns[type] - Date.now();
                 if (remaining <= 0) {
                     clearInterval(interval);
+                    delete this._adCooldownIntervals[type]; // Clean up interval reference
+                    delete this.gameState.adCooldowns[type]; // Remove from persistent state
+                    this.saveGame(); // Save changes
+                    
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                     btn.classList.remove('cooldown-active');
@@ -2417,6 +2446,7 @@ class RoboClicker {
                     btn.textContent = `WAIT ${m}:${s.toString().padStart(2, '0')}`;
                 }
             }, 1000);
+            this._adCooldownIntervals[type] = interval; // Store interval ID
         }
     }
 
@@ -2425,9 +2455,7 @@ class RoboClicker {
         const now = Date.now();
         
         // Start Cooldown for button-based ads
-        // if (type === 'turbo' || type === 'auto' || type === 'lucky' || type === 'auto_clicker') {
-        //    this.startAdCooldown(type);
-        // }
+        this.startAdCooldown(type);
 
         if (type === 'turbo') {
             // 1 Minute Boost
@@ -2758,6 +2786,13 @@ class RoboClicker {
                     gems: Math.floor(100 + (dayIndex * 20))
                 };
             case 'mega':
+                // Day 2 (dayIndex === 1) is now 250 gems
+                if (dayIndex === 1) {
+                    return {
+                        cash: Math.floor(baseVal * 3 * streakBonus),
+                        gems: 250
+                    };
+                }
                 return {
                     cash: Math.floor(baseVal * 3 * streakBonus),
                     gems: Math.floor(50 + (dayIndex * 10))
@@ -4152,6 +4187,9 @@ class RoboClicker {
         if (!this.gameState.claimedPlaytimeRewards) this.gameState.claimedPlaytimeRewards = [];
         // sessionPlaytime now persists across refreshes
         if (this.gameState.sessionPlaytime === undefined) this.gameState.sessionPlaytime = 0;
+
+        // 5.2 Ad Cooldowns Recovery
+        if (!this.gameState.adCooldowns) this.gameState.adCooldowns = {};
 
         // 6. Settings Recovery
         if (this.gameState.settings) {

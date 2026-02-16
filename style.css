@@ -628,7 +628,7 @@ body {
 
 .drawer-handle svg {
     color: var(--dark);
-    font-size: 1.8rem;
+    font-size: 2.5rem; /* Made bigger */
     filter: drop-shadow(0 2px 0 rgba(255,255,255,0.5));
     transition: transform 0.3s;
 }
@@ -662,10 +662,10 @@ body {
 .drawer-title-text {
     font-size: 1.8rem;
     margin: 0;
-    background: linear-gradient(120deg, #6c5ce7, #a29bfe);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+    color: var(--white); /* White color */
+    /* Removed gradient background for text */
+    -webkit-text-fill-color: var(--white); /* Ensure text color is white */
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.7)); /* Stronger shadow for visibility */
     text-transform: uppercase;
     font-weight: 900;
 }
@@ -940,8 +940,9 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.9rem;
-    font-weight: 900;
+    font-size: 1.1rem; /* Slightly larger */
+    font-weight: 900; /* Explicitly thicker */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7); /* For easier visibility */
     border-left: 5px solid var(--accent);
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     animation: slideInLeft 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -6485,8 +6486,9 @@ body {
 
 .playtime-title-mini {
     font-weight: 900;
-    font-size: 0.85rem;
-    color: #95a5a6;
+    font-size: 1rem; /* Slightly larger */
+    color: var(--white); /* White color */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7); /* For easier visibility */
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
